@@ -160,4 +160,5 @@ cython_debug/
 #.idea/
 
 data_sets/
-original_data_sets/
+original_data_set/
+nnUNet_raw/
