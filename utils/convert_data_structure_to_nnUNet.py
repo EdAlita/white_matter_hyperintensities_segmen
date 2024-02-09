@@ -17,7 +17,7 @@ def convert_data_structure_to_nnUNet(
     """
 
     if not data_type in ['FLAIR','FLAIR+T1']:
-        raise Exception()
+        raise Exception(f'Datatype not recognize')
 
     print(f'Creating the nnUNet dataset for {data_type}')
 
