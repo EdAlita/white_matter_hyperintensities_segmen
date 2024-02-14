@@ -1,0 +1,180 @@
+MICCAI 2008
+
+Sites: 
+    - Children's Hospital of Boston
+    - University of North Carolina
+
+MRI: 
+    - 3T Siemens Allegra
+    - 3T Siemens
+
+Citation:
+
+cully M., Magnotta V., Gasparovic C., Pelligrimo P., Feis D., Bockholt H. "3D Segmentation In The Clinic: A Grand Challenge II at MICCAI 2008 - MS Lesion Segmentation". The MIDAS Journal. 2008 Jul. http://hdl.handle.net/10380/1449
+
+Metadata:
+    - no provide
+
+notes: 
+    - UNC_01 Brainstem lesion
+---------------------------------------------------------------------------------
+MICCAI 2016
+
+Sites:
+    - Rennes
+    - Lyon
+    - Lyon
+
+MRI: 
+    - Siemens 3T Verio
+    - Siemens Aera 1.5T
+    - Philips Ingenia 3T
+
+Meta data:
+    - Age: 24 to 61 years old, with an average age of 45.4 years old
+    - Gender: a total of 38 women were included and 15 men
+
+Training dataset		
+    Rennes training patient 1	36	F
+    Rennes training patient 2	41	M
+    Rennes training patient 3	26	F
+    Rennes training patient 4	48	F
+    Rennes training patient 5	24	F
+    Lyom_S training patient 1	53	M
+    Lyom_S training patient 2	42	F
+    Lyom_S training patient 3	36	F
+    Lyom_S training patient 4	52	F
+    Lyom_S training patient 5	36	M
+    Lyom_P training patient 1	54	M
+    Lyom_P training patient 2	55	F
+    Lyom_P training patient 3	35	M
+    Lyom_P training patient 4	38	M
+    Lyom_P training patient 5	48	M
+
+
+Citation:
+Olivier Commowick, Michaël Kain, Romain Casey, Roxana Ameli, Jean-Christophe Ferré, et al.. Multiple sclerosis lesions segmentation from multiple experts: The MICCAI 2016 challenge dataset. NeuroImage, 2021, 244, pp.1-8. 10.1016/j.neuroimage.2021.118589.
+
+-----------------------------------------------------
+MICCAI 2017
+
+Sites:
+    - UMC Utrecht
+    - NUHS Singapore
+    - VU Amsterdam
+
+MRI: 
+    - 3 T Philips Achieva
+    - 3 T Siemens TrioTim 
+    - 3 T GE Signa HDxt 
+
+Metadata:
+    - no provide
+
+Citation:
+
+Kuijf, Hugo; Biesbroek, Matthijs; de Bresser, Jeroen; Heinen, Rutger; Chen, Christopher; van der Flier, Wiesje; Barkhof; Viergever, Max; Biessels, Geert Jan, 2022, "Data of the White Matter Hyperintensity (WMH) Segmentation Challenge", https://doi.org/10.34894/AECRSD, DataverseNL, V1 
+-----------------------------------------------------------------
+MICCAI 2021 (missing of data integration)
+
+    - 3D FLAIR sequence at a first timepoint
+    - 3D FLAIR sequence at a second timepoint (1 to 3 years after the first one)
+
+Sites:
+    - Rennes
+    - Lyon
+
+MRI: 
+    - Three GE scanners: Optima MR450w 1.5T, SIGNA HDx 3T, SIGNA HDxt 1.5T
+    - Six Philips scanners: Ingenia 1.5T, 2 Ingenia 3T, 1 Achieva dStream 3T, 1 Achieva 1.5T, 1 Achieva 3T
+    - Six Siemens scanners: 1 Aera 1.5T, 1 Skyra 3T, 1 Verio 3T, 1 Prisma 3T, 2 Avanto 1.5T
+
+note: 
+
+    Note: really small isolated lesions over all the dataset
+    013 - lesion in correct position
+    018 - lesion in correct position
+    015 - no lesions
+    016 - lesion in correct position
+    021 - lesion in correct position
+    024 - lesion in correct position
+    026 - lesion in correct position 
+    027 - lesion in correct position
+    029 - lesion in spinal cord
+    030 - lesion in correct position
+    032 - no lesion
+    035 - lesion in correct position
+    037 - lesion in correct position
+    039 - lesion in correct position
+    043 - lesion in correct position
+    047 - no lesion
+    048 - lesion in correct position
+    049 - no lesion
+    051 - no lesion
+    052 - no lesion
+    057 - lesion in correct position
+    061 - lesion in correct position
+    068 - no lesion
+    069 - lesion in correct position
+    070 - no lesion
+    074 - lesion in correct position
+    077 - lesion in correct position
+    083 - lesion in correct position
+    084 - no lesion
+    088 - cerebellum lesion
+    089 - no lesion
+    090 - no lesion
+    091 - lesion in correct position
+    094 - lesion in correct position
+    095 - lesion in correct position
+    096 - no lesion
+    099 - lesion in correct position
+    100 - cerebellum lesion
+
+--------------------------------------------------------------------------
+University of Ljubljana
+
+Site:
+    - University Medical Center Ljubljana
+
+MRI:
+    - 3T Siemens Magnetom Trio MR
+
+Metadata: 
+
+patient_id	age	sex
+1	31	F
+2	33	M
+3	37	F
+4	25	M
+5	33	F
+6	37	F
+7	53	F
+8	41	M
+9	40	F
+10	64	F
+11	29	M
+12	39	F
+13	26	M
+14	42	M
+15	57	F
+16	42	F
+17	27	F
+18	60	F
+19	47	F
+20	37	F
+21	33	F
+22	30	F
+23	39	F
+24	43	M
+25	35	F
+26	40	F
+27	39	F
+28	39	F
+29	26	F
+30	54	F
+
+Citation:
+
+- Lesjak, Žiga, Franjo Pernuš, Boštjan Likar, and  Žiga Špiclin. "A Novel Public MR Image Dataset of Multiple Sclerosis Patients With Lesion Segmentations Based on Multi-rater Consensus", Neuroinformatics (2017), DOI: 10.1007/s12021-017-9348-7
+

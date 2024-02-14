@@ -44,7 +44,7 @@ def convert_data_structure_to_nnUNet(
 
     # Create new directory structure
     (task_path / 'imagesTr').mkdir(parents=True, exist_ok=True)
-    #(task_path / 'imagesTs').mkdir(parents=True, exist_ok=True)
+    (task_path / 'imagesTs').mkdir(parents=True, exist_ok=True)
     (task_path / 'labelsTr').mkdir(parents=True, exist_ok=True)
 
     # Function to handle the file copying and renaming
@@ -53,7 +53,7 @@ def convert_data_structure_to_nnUNet(
             for folder in sorted(source_folder.iterdir()):
                 if folder.is_dir():
                     for file in folder.glob('*.nii.gz'):
-                        if 'lesion' in file.name:
+                        if 'wmh_rater1' in file.name:
                             # For segmentation files (labels)
                             dest_file = task_path / 'labelsTr' / (folder.name + '.nii.gz')
                             shutil.copy2(file, dest_file)
@@ -73,7 +73,7 @@ def convert_data_structure_to_nnUNet(
             for folder in sorted(source_folder.iterdir()):
                 if folder.is_dir():
                     for file in folder.glob('*.nii.gz'):
-                        if 'lesion' in file.name:
+                        if 'wmh_rater1' in file.name:
                             # For segmentation files (labels)
                             dest_file = task_path / 'labelsTr' / (folder.name + '.nii.gz')
                             shutil.copy2(file, dest_file)
@@ -87,7 +87,7 @@ def convert_data_structure_to_nnUNet(
     # Process each set
     handle_files(original_path / 'train',is_test=False,data_type=data_type)
     #handle_files(original_path / 'Validation_Set')
-    #handle_files(original_path / 'test', is_test=True,data_type=data_type)
+    handle_files(original_path / 'test', is_test=True,data_type=data_type)
 
 # Usage Example (Uncomment and modify the paths as needed)
 if __name__ == "__main__":
