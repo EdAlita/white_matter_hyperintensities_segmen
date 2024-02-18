@@ -31,7 +31,7 @@ def define_size(mov_dim: np.array,
 
 def map_size(arr: numpy.ndarray,
              base_shape: list,
-             verbose: int =1):
+             verbose: bool =False):
     """Pad or crop the size of an input volume to a reference shape
     Args:
         arr (numpy.ndarray):  array to be map
@@ -41,8 +41,7 @@ def map_size(arr: numpy.ndarray,
         final_arr (3D array) : 3D array containing with a shape defined by base_shape
     """
 
-    if verbose > 0:
-        print('Volume will be resize from %s to %s ' % (arr.shape, base_shape))
+    if verbose: print('[info]: (map_size) Volume will be resize from %s to %s ' % (arr.shape, base_shape))
 
     if list(arr.shape) != list(base_shape):
 
@@ -87,7 +86,7 @@ def standarize(root: Path,
                         print(nib.aff2axcodes(canonical.affine))
                         print(type([256, 256, 256]))
 
-                    new_size = map_size(flair, [256, 256, 256],1)
+                    new_size = map_size(flair, [256, 256, 256],True)
 
                     resize_img = nib.Nifti1Image(new_size, img.affine, img.header)
                     nib.save(resize_img, file)
@@ -95,5 +94,5 @@ def standarize(root: Path,
         return 0
 
 if __name__ == '__main__':
-    standarize(Path('/localmount/volume-ssd/users/uline/nnUNet_CVD_split/data/nnUNet_raw/nnUNet_raw_data/Task975_CVD/imagesTs'),
+    standarize(Path('/localmount/volume-ssd/users/uline/nnUNet_CVD_split/data/nnUNet_raw/nnUNet_raw_data/Task975_CVD/'),
                verbose = True)
