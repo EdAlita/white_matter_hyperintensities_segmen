@@ -46,6 +46,7 @@ def convert_data_structure_to_nnUNet(
     (task_path / 'imagesTr').mkdir(parents=True, exist_ok=True)
     (task_path / 'imagesTs').mkdir(parents=True, exist_ok=True)
     (task_path / 'labelsTr').mkdir(parents=True, exist_ok=True)
+    (task_path / 'labelsTs').mkdir(parents=True, exist_ok=True)
 
     # Function to handle the file copying and renaming
     def handle_files(source_folder,is_test=False,data_type='FLAIR'):
@@ -53,7 +54,7 @@ def convert_data_structure_to_nnUNet(
             for folder in sorted(source_folder.iterdir()):
                 if folder.is_dir():
                     for file in folder.glob('*.nii.gz'):
-                        if 'wmh_rater1' in file.name:
+                        if 'lesion' in file.name:
                             # For segmentation files (labels)
                             dest_file = task_path / 'labelsTr' / (folder.name + '.nii.gz')
                             shutil.copy2(file, dest_file)
@@ -73,9 +74,10 @@ def convert_data_structure_to_nnUNet(
             for folder in sorted(source_folder.iterdir()):
                 if folder.is_dir():
                     for file in folder.glob('*.nii.gz'):
-                        if 'wmh_rater1' in file.name:
+                        if 'lesion' in file.name:
                             # For segmentation files (labels)
-                            dest_file = task_path / 'labelsTr' / (folder.name + '.nii.gz')
+                            dest_folder = 'labelsTs' if is_test else 'labelsTr'
+                            dest_file = task_path / dest_folder / (folder.name + '.nii.gz')
                             shutil.copy2(file, dest_file)
                         elif 'FLAIR' in file.name:
                             # For image files

@@ -8,12 +8,8 @@ TO DO: 1 mm data interpolation
        import torch
        import torch.nn.functional as F
 """""
-import argparse
-import nibabel as nib
 from nibabel.processing import resample_to_output
-from pathlib import Path
 import numpy as np
-import time
 
 def rescale_image(img_data):
     # Conform intensities
@@ -181,67 +177,3 @@ def map_size(arr: np.ndarray,base_shape: list,verbose: bool = False):
 
     else:
         return arr
-
-
-def data_harmonization(root_path: Path,verbose: bool = False):
-    if not root_path.is_dir(): raise NotADirectoryError()
-
-    for folder in sorted(root_path.iterdir()):
-        if verbose: print(f'[info]:preprocessing {len(sorted(root_path.iterdir()))} of Folders')
-        if folder.is_dir():
-            if verbose:
-                print(f'Processing {folder.name}')
-                print('')
-            for file in folder.glob('*.nii.gz'):
-                if verbose:
-                    print(f'Processing {file.name}')
-
-                img = nib.load(file)
-                zooms, shape = img.header.get_zooms(), img.header.get_data_shape()
-
-                if verbose:
-                    print(f'Original size {shape} and Original zoom {zooms}')
-                    print('------------------------------------------------')
-
-                if zooms != (1.0, 1.0, 1.0):
-                    if verbose: print(f'[info]: 1 mm space Interpolation')
-                    start_time = time.time()
-                    if 'lesion' in file.name:
-                        if verbose: print('[info]: Using Nearest...')
-                        img_out = interpolate_volume(img,interpolation='nearest')
-                        if verbose: print(f'[info]: new shape {img_out.header.get_data_shape()}')
-                        if verbose: print(f"[info]: Execution time: {time.time() - start_time} seconds")
-                    else:
-                        if verbose: print('[info]: Using bspline...')
-                        img_out = interpolate_volume(img)
-                        if verbose: print(f'[info]: new shape {img_out.header.get_data_shape()}')
-                        if verbose: print(f"[info]: Execution time: {time.time() - start_time} seconds")
-
-                if nib.aff2axcodes(img_out.affine) != ('R', 'A', 'S'):
-                    if verbose: print(f'[info]:RAS image Conversion.....')
-                    img_out = nib.as_closest_canonical(img_out)
-
-                img_array = np.asarray(img_out.get_fdata(), dtype=np.uint8)
-
-                if shape != (256, 256, 256):
-                    if verbose: print(f'[info]: 256*256*256 remapping ....')
-                    img_array = map_size(img_array, [256, 256, 256], verbose)
-                if not 'lesion' in file.name:
-                    if verbose: print('[info]: Intesity Rescale ....')
-                    img_array = rescale_image(img_array)
-
-                if verbose: print(f'[info]: Saving on {folder / file.name}')
-                if verbose: print(' ')
-
-                img_out = nib.Nifti1Image(img_array, img_out.affine, img_out.header)
-                nib.save(img_out, folder / file.name)
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Data Harmonization from raw data')
-    parser.add_argument("root_path", type=str, help="Root path of the new data_structure")
-    parser.add_argument('-v', '--verbose',action='store_true',default=False, help="Turn on the verbose flag")  # on/off flag
-
-    args = parser.parse_args()
-
-    data_harmonization(root_path=Path(args.root_path), verbose=args.verbose)
