@@ -1,9 +1,9 @@
 from pathlib import Path
-import pandas as pd
 import nibabel as nib
 from metrics.eval_metrics import get_values
 import csv
 import numpy as np
+from tqdm import tqdm
 
 
 class EvaluateFromDir:
@@ -14,7 +14,7 @@ class EvaluateFromDir:
     def evaluate(self):
         results = {}
 
-        for folder in sorted(self.path.iterdir()):
+        for folder in tqdm(sorted(self.path.iterdir()),desc='Evaluating....'):
             gt = (nib.as_closest_canonical(nib.load(folder / 'lesion.nii.gz'))).get_fdata()
             folder_result = {}
             for file in sorted(folder.glob('*.nii.gz')):
@@ -42,18 +42,15 @@ class EvaluateFromDir:
 
     def create_model(self, prob:float):
         for folder in sorted(self.path.iterdir()):
-
+            sum = 0
             for file in sorted(folder.glob('*.nii.gz')):
+                affine = nib.load(file).affine
+                header = nib.load(file).header
                 if 'lesion' not in file.name:
-                    affine = nib.load(file).affine
-                    header = nib.load(file).header
-                    sum =+ (nib.as_closest_canonical(nib.load(file))).get_fdata()
-
+                    sum += (nib.as_closest_canonical(nib.load(file))).get_fdata()
             out = sum/3
-            print(np.unique(out))
             binary_model = (out > prob).astype(np.uint8)
-
-            nib.save(nib.Nifti1Image(binary_model, affine, header), folder / 'model.nii.gz')
+            nib.save(nib.Nifti1Image(binary_model, affine, header ), folder / 'seg_2.5_D.nii.gz')
 
 
 if __name__ == '__main__':

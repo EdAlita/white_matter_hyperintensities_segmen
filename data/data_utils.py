@@ -36,7 +36,7 @@ def get_thick_slices(
 def filter_blank_slices_thick(
         img_vol: npt.NDArray,
         label_vol: npt.NDArray,
-        threshold: int = 50
+        threshold: int = 10
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Filter blank slices from the volume using the label volume.
@@ -58,13 +58,21 @@ def filter_blank_slices_thick(
         [MISSING].
     """
     # Get indices of all slices with more than threshold labels/pixels
-    select_slices = np.sum(label_vol, axis=(0, 1)) > threshold
+    select_slices = np.sum(label_vol, axis=(1,2)) > threshold
+    not_selected = np.sum(label_vol, axis=(1,2)) < threshold
+    num = sum(select_slices)
+    no_num = sum(not_selected)
+    print(num,int(num*0.10+0.5))
+    while sum(not_selected) != int(num*0.15):
+        n = np.random.randint(low=0, high=255)
+        not_selected[n] = False
+
+    select = select_slices + not_selected
 
     # Retain only slices with more than threshold labels/pixels
-    img_vol = img_vol[:, :, select_slices, :]
-    label_vol = label_vol[:, :, select_slices]
-
-    return img_vol, label_vol
+    img_vol_out = img_vol[select, :, :, :]
+    label_vol_out = label_vol[select, :,:]
+    return img_vol_out, label_vol_out
 
 
 def sagittal_transform_coronal(vol: np.ndarray, inverse: bool = False) -> np.ndarray:
@@ -76,6 +84,6 @@ def sagittal_transform_coronal(vol: np.ndarray, inverse: bool = False) -> np.nda
 
 def sagittal_transform_axial(vol: np.ndarray, inverse: bool = False) -> np.ndarray:
     if inverse:
-        return np.moveaxis(vol, [0, 1, 2], [2, 1, 0])
+        return np.moveaxis(vol, [0, 1, 2], [2, 0, 1])
     else:
         return np.moveaxis(vol, [0, 1, 2], [1, 2, 0])
