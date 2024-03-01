@@ -3,6 +3,7 @@ import pandas as pd
 import nibabel as nib
 from metrics.eval_metrics import get_values
 import csv
+import numpy as np
 
 
 class EvaluateFromDir:
@@ -18,7 +19,7 @@ class EvaluateFromDir:
             folder_result = {}
             for file in sorted(folder.glob('*.nii.gz')):
                 if 'lesion' not in file.name:
-                    vol = (nib.as_closest_canonical(nib.load( file ))).get_fdata()
+                    vol = (nib.as_closest_canonical(nib.load(file))).get_fdata()
                     values = get_values(gt,vol,measures=('Dice','VS','HD95'),voxelspacing=(1.0,1.0,1.0))
                     projection_name = (file.name.removesuffix('.nii.gz')).removeprefix('seg_')
                     folder_result['Dice_'+projection_name] = values['Dice']
@@ -39,6 +40,23 @@ class EvaluateFromDir:
             writer.writerow(headers)
             writer.writerows(rows)
 
+    def create_model(self, prob:float):
+        for folder in sorted(self.path.iterdir()):
+
+            for file in sorted(folder.glob('*.nii.gz')):
+                if 'lesion' not in file.name:
+                    affine = nib.load(file).affine
+                    header = nib.load(file).header
+                    sum =+ (nib.as_closest_canonical(nib.load(file))).get_fdata()
+
+            out = sum/3
+            print(np.unique(out))
+            binary_model = (out > prob).astype(np.uint8)
+
+            nib.save(nib.Nifti1Image(binary_model, affine, header), folder / 'model.nii.gz')
+
+
 if __name__ == '__main__':
     evaluate = EvaluateFromDir(root_dir=Path('/localmount/volume-hd/users/uline/segmentation_results/nn_Unet/CVD'))
-    evaluate.evaluate()
+    #evaluate.evaluate()
+    evaluate.create_model(prob=0.3)
