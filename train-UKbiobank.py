@@ -1,5 +1,6 @@
 import os
 from config.defaults import get_cfg_defaults
+from pathlib import Path
 # IMPORTS
 from pprint import pprint
 import time
@@ -26,6 +27,8 @@ from utils.meters import Meter
 from utils.metrics import iou_score, precision_recall
 from utils.misc import plot_predictions, update_num_steps
 from torchsummary import summary
+
+import pandas as pd
 
 logger = loggen(__name__)
 
@@ -279,8 +282,25 @@ class Trainer:
             print("Using ", self.cfg.NUM_GPUS, "GPUs!")
             self.model = torch.nn.DataParallel(self.model)
 
-        val_loader = loader.get_dataloader(self.cfg, "val")
-        train_loader = loader.get_dataloader(self.cfg, "train")
+        dataset_path = Path(self.cfg.DATA.PATH_HDF5_TRAIN)
+
+        dataframe = pd.read_csv(dataset_path / "wmh_overall.csv")
+        dataframe = dataframe[dataframe["wmh_split"].str.contains('train')]
+
+
+
+        subjects_dirs = [dataset_path / row["imageid"] for index, row in dataframe.iterrows()]
+
+        if self.cfg.MODEL.NUM_CHANNELS == 7:
+            img_list = ['FLAIR.nii.gz']
+        else:
+            img_list = ['FLAIR.nii.gz','T1.nii.gz']
+
+        val_loader = loader.get_dataloader_biobank(self.cfg, "val")
+        train_loader = loader.get_dataloader_biobank(self.cfg,
+                                                     "train",
+                                                     data_path=subjects_dirs,
+                                                     img_list=img_list)
 
         dict = next(iter(train_loader))
 
@@ -363,7 +383,7 @@ class Trainer:
         # Perform the training loop.
         logger.info("Start epoch: {}".format(start_epoch + 1))
         best_epoch = -1
-        early_stopping_tresh = 10
+        early_stopping_tresh = 5
 
         for epoch in range(start_epoch, self.cfg.TRAIN.NUM_EPOCHS):
             self.train(train_loader, optimizer, scheduler, train_meter, epoch=epoch+1)

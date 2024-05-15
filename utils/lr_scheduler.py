@@ -18,11 +18,12 @@ import torch.optim
 # IMPORTS
 import torch.optim.lr_scheduler as scheduler
 import yacs.config
+from torch.optim.lr_scheduler import StepLR, CosineAnnealingWarmRestarts, MultiStepLR
 
 
 def get_lr_scheduler(
     optimzer: torch.optim.Optimizer, cfg: yacs.config.CfgNode
-) -> Union[None, scheduler.StepLR, scheduler.CosineAnnealingWarmRestarts]:
+) -> StepLR | CosineAnnealingWarmRestarts | MultiStepLR | None:
     """
     Give a schedular for left-right scheduling.
 
@@ -57,7 +58,14 @@ def get_lr_scheduler(
             T_mult=cfg.OPTIMIZER.T_MULT,
             eta_min=cfg.OPTIMIZER.ETA_MIN,
         )
+    elif scheduler_type == 'multiStep':
+        return scheduler.MultiStepLR(
+            optimizer=optimzer,
+            milestones=cfg.OPTIMIZER.MILESTONE,
+            gamma=cfg.OPTIMIZER.GAMMA
+        )
     elif scheduler_type == "NoScheduler" or scheduler_type is None:
         return None
+
     else:
         raise ValueError(f"{scheduler_type} lr scheduler is not supported ")

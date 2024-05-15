@@ -1,6 +1,7 @@
 from numpy import typing as npt
 import numpy as np
 from typing import Tuple
+from scipy.ndimage import uniform_filter
 
 
 def get_thick_slices(
@@ -35,9 +36,12 @@ def get_thick_slices(
 
 def filter_blank_slices_thick(
         img_vol: npt.NDArray,
+        img2_vol: npt.NDArray,
+        img3_vol: npt.NDArray,
         label_vol: npt.NDArray,
+        weight_vol: npt.NDArray,
         threshold: int = 10
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Filter blank slices from the volume using the label volume.
 
@@ -47,6 +51,8 @@ def filter_blank_slices_thick(
         Orig image volume.
     label_vol : npt.NDArray
         Label images (ground truth).
+    weight_vol : npt.NDArray
+        weights.
     threshold : int
         Threshold for number of pixels needed to keep slice (below = dropped). (Default value = 50).
 
@@ -59,11 +65,12 @@ def filter_blank_slices_thick(
     """
     # Get indices of all slices with more than threshold labels/pixels
     select_slices = np.sum(label_vol, axis=(1,2)) > threshold
+    non_zero = np.sum(label_vol, axis=(1, 2)) > 0.0
     not_selected = np.sum(label_vol, axis=(1,2)) < threshold
     num = sum(select_slices)
     no_num = sum(not_selected)
-    print(num,int(num*0.10+0.5))
-    while sum(not_selected) != int(num*0.15):
+    #print(f"{num} out of {no_num}")
+    while sum(not_selected) != int(num*0.10+1):
         n = np.random.randint(low=0, high=255)
         not_selected[n] = False
 
@@ -71,9 +78,57 @@ def filter_blank_slices_thick(
 
     # Retain only slices with more than threshold labels/pixels
     img_vol_out = img_vol[select, :, :, :]
-    label_vol_out = label_vol[select, :,:]
-    return img_vol_out, label_vol_out
+    img2_vol_out = img2_vol[select, :, :, :]
+    img3_vol_out = img3_vol[select, :, :, :]
+    label_vol_out = label_vol[select, :, :]
+    weight_vol = weight_vol[select, :, :]
+    return img_vol_out, img2_vol_out, img3_vol_out, label_vol_out, weight_vol
 
+def create_weight_mask(
+        mapped_aseg: npt.NDArray,
+        max_weight: int = 5,
+        max_edge_weight: int = 5,
+        gradient: bool = True
+) -> np.ndarray:
+    """
+    Create weighted mask - with median frequency balancing and edge-weighting.
+
+    Parameters
+    ----------
+    mapped_aseg : np.ndarray
+        Segmentation to create weight mask from.
+    max_weight : int
+        Maximal weight on median weights (cap at this value). (Default value = 5).
+    max_edge_weight : int
+        Maximal weight on gradient weight (cap at this value). (Default value = 5).
+    gradient : bool
+        Flag, set to create gradient mask (default = True).
+
+    Returns
+    -------
+    np.ndarray
+        Weights.
+    """
+    unique, counts = np.unique(mapped_aseg, return_counts=True)
+
+    # Median Frequency Balancing
+    class_wise_weights = np.median(counts) / counts
+    class_wise_weights[class_wise_weights > max_weight] = max_weight
+    (h, w, d) = mapped_aseg.shape
+
+    weights_mask = np.reshape(class_wise_weights[mapped_aseg.ravel()], (h, w, d))
+
+    # Gradient Weighting
+    if gradient:
+        (gx, gy, gz) = np.gradient(mapped_aseg)
+        grad_weight = max_edge_weight * np.asarray(
+            np.power(np.power(gx, 2) + np.power(gy, 2) + np.power(gz, 2), 0.5) > 0,
+            dtype="float",
+        )
+
+        weights_mask += grad_weight
+
+    return weights_mask
 
 def sagittal_transform_coronal(vol: np.ndarray, inverse: bool = False) -> np.ndarray:
     if inverse:

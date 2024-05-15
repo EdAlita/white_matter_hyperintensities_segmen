@@ -48,10 +48,6 @@ class DiceLoss(_Loss):
             N x C x H x W Variable.
         target : Tensor
             N x C x W LongTensor with starting class at 0.
-        weights : int, optional
-            C FloatTensor with class wise weights(Default value = None).
-        ignore_index : int, optional
-            Ignore label with index x in the loss calculation (Default value = None).
 
         Returns
         -------
@@ -61,7 +57,6 @@ class DiceLoss(_Loss):
         eps = 0.001
 
         encoded_target = target.unsqueeze(1)
-
 
         intersection = output * encoded_target
         numerator = 2 * intersection.sum(0).sum(1).sum(1)
@@ -146,7 +141,7 @@ class CombinedLoss(nn.Module):
         self.weight_ce = weight_ce
 
     def forward(
-        self, inputx: Tensor, target: Tensor
+        self, inputx: Tensor, target: Tensor, weight: Tensor
     ) -> Tuple[Tensor, Tensor, Tensor]:
         """
         [MISSING].
@@ -178,11 +173,21 @@ class CombinedLoss(nn.Module):
 
         input_soft = F.softmax(inputx, dim=1)  # Along Class Dimension
         dice_val = torch.mean(self.dice_loss(input_soft, target))
-        ce_val = torch.mean(self.cross_entropy_loss.forward(inputx, target))
-        total_loss = torch.add(dice_val,ce_val)
+        ce_val = torch.mean(
+            torch.mul(self.cross_entropy_loss.forward(inputx, target), weight)
+        )
+        total_loss = torch.add(
+            torch.mul(dice_val, self.weight_dice), torch.mul(ce_val, self.weight_ce)
+        )
 
         return total_loss, dice_val, ce_val
 
+class Unified_Focal_loss(nn.Module):
+    def __init__(self):
+        super(Unified_Focal_loss, self).__init__()
+
+    def forward(self):
+        return loss
 
 def get_loss_func(
     cfg: yacs.config.CfgNode,

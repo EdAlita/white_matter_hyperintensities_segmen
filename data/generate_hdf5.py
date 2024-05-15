@@ -9,7 +9,7 @@ import pandas as pd
 from collections import defaultdict
 
 from preprocessing import interpolate_volume, map_size, rescale_image
-from data_utils import get_thick_slices, filter_blank_slices_thick, sagittal_transform_coronal, sagittal_transform_axial
+from data_utils import get_thick_slices, filter_blank_slices_thick, sagittal_transform_coronal, sagittal_transform_axial, create_weight_mask
 
 from utils.wm_logger import loggen
 
@@ -23,9 +23,14 @@ class H5pyDataset:
         self.slice_thickness = params["thickness"]
         self.gt_name = params["gt_name"]
         self.volume_name = params["volume_name"]
+        self.volume2_name = params["volume2_name"]
+        self.volume3_name = params["volume3_name"]
         self.csv_file = Path(params["csv_file"])
         self.plane = params["plane"]
         self.datatype = params["datatype"]
+        self.max_weight= params["max_weight"]
+        self.edge_weight = params["edge_weight"]
+        self.gradient = params["gradient"]
 
         assert self.dataset_path.is_dir(), f"The provided paths are not valid: {self.dataset_path}!"
 
@@ -37,12 +42,27 @@ class H5pyDataset:
         self.data_set_size = len(dataframe)
 
     def _load_volumes(self, subject_path: Path):
+        LOGGER.info(
+            "Processing intensity image {}, image2 {}, image3 {} and ground truth segmentation {}".format(
+                self.volume_name,self.volume2_name,self.volume3_name, self.gt_name
+            )
+        )
         volume_img = nib.load(subject_path / self.volume_name)
         gt_img = nib.load(subject_path / self.gt_name)
+        if self.volume2_name is None:
+            volume2_img = nib.load(subject_path / self.volume_name)
+        else:
+            volume2_img = nib.load(subject_path / self.volume2_name)
+        if self.volume3_name is None:
+            volume3_img = nib.load(subject_path / self.volume_name)
+        else:
+            volume3_img = nib.load(subject_path / self.volume3_name)
 
         zooms, shape = volume_img.header.get_zooms(), volume_img.header.get_data_shape()
 
         volume_img = nib.as_closest_canonical(volume_img)
+        volume2_img = nib.as_closest_canonical(volume2_img)
+        volume3_img = nib.as_closest_canonical(volume3_img)
         gt_img = nib.as_closest_canonical(gt_img)
 
         if self.preprocessing:
@@ -50,10 +70,16 @@ class H5pyDataset:
                 gt_img = interpolate_volume(gt_img,interpolation="nearest")
                 volume_img = interpolate_volume(volume_img)
         gt_seg = np.asarray(
-            gt_img.get_fdata(), dtype=np.int16
+            gt_img.get_fdata(), dtype=np.uint8
         )
         volume = np.asarray(
             volume_img.get_fdata(), dtype=np.uint8
+        )
+        volume2 = np.asarray(
+            volume2_img.get_fdata(), dtype=np.uint8
+        )
+        volume3 = np.asarray(
+            volume3_img.get_fdata(), dtype=np.uint8
         )
         if self.preprocessing:
             volume = map_size(volume,[256, 256, 256])
@@ -62,7 +88,7 @@ class H5pyDataset:
             volume = rescale_image(volume)
             gt_seg = rescale_image(gt_seg)
 
-        return volume, gt_seg, zooms
+        return volume, volume2, volume3, gt_seg, zooms
 
     def create_hdf5_dataset(self, blt: int):
 
@@ -76,25 +102,48 @@ class H5pyDataset:
                     f"Volume Nr: {idx + 1} Processing MRI Data from {current_subject.name}/{self.volume_name}"
                 )
 
-                volume, gt_img, zooms = self._load_volumes(current_subject)
-                size, _ , _ = volume.shape
+                volume, volume2, volume3, gt_img, zooms = self._load_volumes(current_subject)
+                size, _, _ = volume.shape
 
                 if self.plane == "axial":
                     volume = sagittal_transform_axial(volume)
+                    volume2 = sagittal_transform_axial(volume2)
+                    volume3 = sagittal_transform_axial(volume3)
                     gt_img = sagittal_transform_axial(gt_img)
 
                 if self.plane == "coronal":
                     volume = sagittal_transform_coronal(volume)
+                    volume2 = sagittal_transform_axial(volume2)
+                    volume3 = sagittal_transform_axial(volume3)
                     gt_img = sagittal_transform_coronal(gt_img)
 
-                volume_thick = get_thick_slices(volume, self.slice_thickness)
+                weight = create_weight_mask(
+                    gt_img,
+                    max_weight=self.max_weight,
+                    max_edge_weight= self.edge_weight,
+                    gradient= self.gradient
+                )
+                LOGGER.info(
+                    "Created weights with max_w {}, gradient {},"
+                    " edge_w {}".format(
+                        self.max_weight,
+                        self.gradient,
+                        self.edge_weight))
 
-                filter_volume , filter_labels = filter_blank_slices_thick(volume_thick, gt_img, threshold=blt)
+                volume_thick = get_thick_slices(volume, self.slice_thickness)
+                volume2_thick = get_thick_slices(volume2, self.slice_thickness)
+                volume3_thick = get_thick_slices(volume3, self.slice_thickness)
+
+                filter_volume, filter_volume2,filter_volume3, filter_labels, filter_weight = filter_blank_slices_thick(
+                    volume_thick,volume2_thick,volume3_thick, gt_img, weight, threshold=blt)
 
                 num_batch = volume_thick.shape[0]
 
                 data_per_idx[f"{size}"]["volume"].extend(filter_volume)
+                data_per_idx[f"{size}"]["volume2"].extend(filter_volume2)
+                data_per_idx[f"{size}"]["volume3"].extend(filter_volume3)
                 data_per_idx[f"{size}"]["seg"].extend(filter_labels)
+                data_per_idx[f"{size}"]["weight"].extend(filter_weight)
                 data_per_idx[f"{size}"]["zoom"].extend((zooms,) * num_batch)
                 data_per_idx[f"{size}"]["subject"].append(
                         current_subject.name.encode("ascii", "ignore")
@@ -103,17 +152,22 @@ class H5pyDataset:
                 LOGGER.info(f"Volume {size} Failed Reading Data. Error: {e}")
                 continue
 
-
         for key, data_dict in data_per_idx.items():
             data_per_idx[key]["orig"] = np.asarray(data_dict["volume"], dtype=np.uint8)
+            data_per_idx[key]["orig2"] = np.asarray(data_dict["volume2"], dtype=np.uint8)
+            data_per_idx[key]["orig3"] = np.asarray(data_dict["volume3"], dtype=np.uint8)
             data_per_idx[key]["seg"] = np.asarray(data_dict["seg"], dtype=np.uint8)
-
+            data_per_idx[key]["weight"] = np.asarray(data_dict["weight"], dtype=float)
+        
         with h5py.File(self.dataset_name, "w") as hf:
             dt = h5py.special_dtype(vlen=str)
             for key, data_dict in data_per_idx.items():
                 group = hf.create_group(f"{key}")
                 group.create_dataset("orig_dataset", data=data_dict["volume"])
+                group.create_dataset("orig2_dataset", data=data_dict["volume2"])
+                group.create_dataset("orig3_dataset", data=data_dict["volume3"])
                 group.create_dataset("aseg_dataset", data=data_dict["seg"])
+                group.create_dataset("weight_dataset", data=data_dict["weight"])
                 group.create_dataset("zoom_dataset", data=data_dict["zoom"])
                 group.create_dataset("subject", data=data_dict["subject"], dtype=dt)
         
@@ -154,6 +208,16 @@ if __name__ == "__main__":
     default="FLAIR.nii.gz",
     help = "Default name of the original images. default is (FLAIR.nii.gz)"
     )
+    parser.add_argument("--volumen2_name",
+    type=str,
+    default=None,
+    help ="Default name of the original images. default is (None)"
+    )
+    parser.add_argument("--volumen3_name",
+    type=str,
+    default=None,
+    help ="Default name of the original images. default is (None)"
+    )
 
     parser.add_argument("--csv_file",
     type=str,
@@ -178,6 +242,27 @@ if __name__ == "__main__":
     help="Turn on to add the preprocessing to your dataset"
     )
 
+    parser.add_argument(
+        "--max_w",
+        type=int,
+        default=5,
+        help="Overall max weight for any voxel in weight mask. Default=5",
+    )
+
+    parser.add_argument(
+        "--edge_w",
+        type=int,
+        default=5,
+        help="Weight for edges in weight mask. Default=5",
+    )
+
+    parser.add_argument(
+        "--no_grad",
+        action="store_true",
+        default=False,
+        help="Turn on to only use median weight frequency (no gradient)",
+    )
+
     args = parser.parse_args()
 
     dataset_params = {
@@ -186,13 +271,18 @@ if __name__ == "__main__":
         "thickness": args.thickness,
         "gt_name": args.gt_name,
         "volume_name":args.volumen_name,
+        "volume2_name": args.volumen2_name,
+        "volume3_name": args.volumen3_name,
         "csv_file":args.csv_file,
         "plane":args.plane,
-        "datatype":args.datatype
+        "datatype":args.datatype,
+        "max_weight": args.max_w,
+        "edge_weight": args.edge_w,
+        "gradient": not args.no_grad
     }
 
-dataset_generator = H5pyDataset(params=dataset_params)
-dataset_generator.create_hdf5_dataset(10)
+    dataset_generator = H5pyDataset(params=dataset_params)
+    dataset_generator.create_hdf5_dataset(15)
 
 
 

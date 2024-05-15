@@ -20,7 +20,7 @@ import models.sub_module as sm
 
 from typing import Dict, Optional, Union
 from torch import Tensor, nn
-
+import torch
 class FastSurferCNNBase(nn.Module):
     """
     Network Definition of Fully Competitive Network network.
@@ -125,15 +125,9 @@ class FastSurferCNNBase(nn.Module):
         bottleneck = self.bottleneck(encoder_output4)
 
         decoder_output4 = self.decode4.forward(bottleneck, skip_encoder_4, indices_4)
-        decoder_output3 = self.decode3.forward(
-            decoder_output4, skip_encoder_3, indices_3
-        )
-        decoder_output2 = self.decode2.forward(
-            decoder_output3, skip_encoder_2, indices_2
-        )
-        decoder_output1 = self.decode1.forward(
-            decoder_output2, skip_encoder_1, indices_1
-        )
+        decoder_output3 = self.decode3.forward(decoder_output4, skip_encoder_3, indices_3)
+        decoder_output2 = self.decode2.forward(decoder_output3, skip_encoder_2, indices_2)
+        decoder_output1 = self.decode1.forward(decoder_output2, skip_encoder_1, indices_1)
 
         return decoder_output1
 
@@ -377,14 +371,112 @@ class FastSurferVINN(FastSurferCNNBase):
 
         return logits
 
+class FastSurferUNETBase(nn.Module):
+    def __init__(self, params: Dict, padded_size: int = 256):
+        super(FastSurferUNETBase, self).__init__()
+        # Parameters for the Descending Arm
+
+        self.encode1 = sm.DenseEncoderBlockInput(params)
+        params["num_channels"] = params["num_filters"]
+        params["num_filters"] = 128
+        self.encode2 = sm.DenseEncoderBlock(params)
+        params["num_channels"] = 128
+        params["num_filters"] = 256
+        self.encode3 = sm.DenseEncoderBlock(params)
+        params["num_channels"] = 256
+        params["num_filters"] = 512
+        self.encode4 = sm.DenseEncoderBlock(params)
+        params["num_channels"] = 512
+        params["num_filters"] = 512
+        self.bottleneck = sm.UnetDenseBlock(params)
+
+        # Parameters for the Ascending Arm
+        params["num_channels"] = 1024
+        params["num_filters"] = 256
+        self.decode4 = sm.DenseDecoderBlock(params)
+        params["num_channels"] = 512
+        params["num_filters"] = 128
+        self.decode3 = sm.DenseDecoderBlock(params)
+        params["num_channels"] = 256
+        params["num_filters"] = 64
+        self.decode2 = sm.DenseDecoderBlock(params)
+        params["num_channels"] = 128
+        params["num_filters_last"] = params["num_filters"]
+        self.decode1 = sm.DenseDecoderBlock(params)
+
+    def forward(self, x: Tensor):
+
+        encoder_output1, skip_encoder_1, indices_1 = self.encode1.forward(x)
+        encoder_output2, skip_encoder_2, indices_2 = self.encode2.forward(
+            encoder_output1
+        )
+        encoder_output3, skip_encoder_3, indices_3 = self.encode3.forward(
+            encoder_output2
+        )
+        encoder_output4, skip_encoder_4, indices_4 = self.encode4.forward(
+            encoder_output3
+        )
+        bottleneck = self.bottleneck(encoder_output4)
+        decoder_output4 = self.decode4.forward(bottleneck, skip_encoder_4, indices_4)
+        decoder_output3 = self.decode3.forward(decoder_output4, skip_encoder_3, indices_3)
+        decoder_output2 = self.decode2.forward(decoder_output3, skip_encoder_2, indices_2)
+        decoder_output1 = self.decode1.forward(decoder_output2, skip_encoder_1, indices_1)
+
+        return decoder_output1
+
+class FastSurferUNET(FastSurferUNETBase):
+
+    def __init__(self, params: Dict, padded_size: int):
+        super(FastSurferUNET, self).__init__(params)
+        params["num_channels"] = params["num_filters"]
+        self.classifier = sm.ClassifierBlock(params)
+
+        # Code for Network Initialization
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
+                nn.init.kaiming_normal_(
+                    m.weight, mode="fan_out", nonlinearity="leaky_relu"
+                )
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
+    def forward(
+        self,
+        x: Tensor,
+        scale_factor: Optional[Tensor] = None,
+        scale_factor_out: Optional[Tensor] = None,
+    ) -> Tensor:
+        """
+        Feedforward through graph.
+
+        Parameters
+        ----------
+        x : Tensor
+            Input image [N, C, H, W].
+        scale_factor : Tensor, optional
+            [N, 1] Defaults to None.
+        scale_factor_out : Tensor, optional
+            [Missing].
+
+        Returns
+        -------
+        output : Tensor
+            Prediction logits.
+        """
+        net_out = super().forward(x)
+        output = self.classifier.forward(net_out)
+
+        return output
 
 _MODELS = {
     "FastSurferCNN": FastSurferCNN,
     "FastSurferVINN": FastSurferVINN,
+    "FastSurferUNET": FastSurferUNET
 }
 
 
-def build_model(cfg: yacs.config.CfgNode) -> Union[FastSurferCNN, FastSurferVINN]:
+def build_model(cfg: yacs.config.CfgNode) -> Union[FastSurferCNN, FastSurferVINN, FastSurferUNET]:
     """
     Build requested model.
 

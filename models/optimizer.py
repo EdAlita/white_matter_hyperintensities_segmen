@@ -17,11 +17,11 @@ from typing import Union
 # IMPORTS
 import torch
 import yacs
-from models.networks import FastSurferCNN, FastSurferVINN
+from models.networks import FastSurferCNN, FastSurferVINN, FastSurferUNET
 
 
 def get_optimizer(
-    model: Union[FastSurferCNN, FastSurferVINN, torch.nn.DataParallel],
+    model: Union[FastSurferCNN, FastSurferVINN, FastSurferUNET , torch.nn.DataParallel],
     cfg: yacs.config.CfgNode,
 ) -> torch.optim.Optimizer:
     """

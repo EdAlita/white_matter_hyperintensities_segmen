@@ -88,9 +88,6 @@ class InputDenseBlock(nn.Module):
             stride=params["stride_conv"],
             padding=(padding_h, padding_w),
         )
-
-        # D \times D convolution for the last block --> with maxout this is redundant unless we want to reduce
-        # the number of filter maps here compared to conv1
         self.conv3 = nn.Conv2d(
             in_channels=conv2_in_size,
             out_channels=out_size,
@@ -103,7 +100,7 @@ class InputDenseBlock(nn.Module):
         self.gn1 = nn.BatchNorm2d(conv1_in_size)
         self.gn2 = nn.BatchNorm2d(conv2_in_size)
         self.gn3 = nn.BatchNorm2d(conv2_in_size)
-        self.gn4 = nn.BatchNorm2d(out_size)
+        self.gn4 = nn.BatchNorm2d(conv2_in_size)
 
         self.prelu = nn.PReLU()  # Learnable ReLU Parameter
 
@@ -270,7 +267,6 @@ class CompetitiveDenseBlock(nn.Module):
         # Convolution block 1 (RF: 3x3)
         x0 = self.conv0(x0)
         x1_bn = self.bn1(x0)
-
         # First Maxout/Addition
         x1_max = torch.maximum(x, x1_bn)
         x1 = self.prelu(x1_max)
@@ -296,6 +292,291 @@ class CompetitiveDenseBlock(nn.Module):
 
         if not self.outblock:
             out = self.bn4(out)
+
+        return out
+
+class UnetDenseBlock(nn.Module):
+    """
+    Define a competitive dense block comprising 3 convolutional layers, with BN/ReLU.
+
+    Attributes
+    ----------
+     params = {'num_channels': 1,
+               'num_filters': 64,
+               'kernel_h': 5,
+               'kernel_w': 5,
+               'stride_conv': 1,
+               'pool': 2,
+               'stride_pool': 2,
+               'num_classes': 44
+               'kernel_c':1
+               'input':True
+               }
+
+    Methods
+    -------
+    forward
+        Feedforward through graph.
+    """
+
+    def __init__(self, params: Dict, outblock: bool = False):
+        """
+        Construct CompetitiveDenseBlock object.
+
+        Parameters
+        ----------
+        params : Dict
+            Dictionary with parameters specifying block architecture.
+        outblock : bool
+            Flag indicating if last block (Default value = False).
+        """
+        super(UnetDenseBlock, self).__init__()
+
+        # Padding to get output tensor of same dimensions
+        padding_h = int((params["kernel_h"] - 1) / 2)
+        padding_w = int((params["kernel_w"] - 1) / 2)
+
+        # Sub-layer output sizes for BN; and
+        conv0_in_size = int(params["num_channels"])  # num_channels
+        conv1_in_size = int(params["num_filters"])
+        conv2_in_size = int(params["num_filters"])
+        out_size = (
+            params["num_filters_last"]
+            if "num_filters_last" in params
+            else params["num_filters"]
+        )
+
+        # Define the learnable layers
+        # Standard conv layers
+        self.conv0 = nn.Conv2d(
+            in_channels=conv0_in_size,
+            out_channels=params["num_filters"],
+            kernel_size=(params["kernel_h"], params["kernel_w"]),
+            stride=params["stride_conv"],
+            padding=(padding_h, padding_w),
+        )
+
+        self.conv1 = nn.Conv2d(
+            in_channels=conv1_in_size+conv0_in_size,
+            out_channels=params["num_filters"],
+            kernel_size=(params["kernel_h"], params["kernel_w"]),
+            stride=params["stride_conv"],
+            padding=(padding_h, padding_w),
+        )
+
+        self.conv2 = nn.Conv2d(
+            in_channels=2*conv1_in_size+2*conv0_in_size,
+            out_channels=params["num_filters"],
+            kernel_size=(params["kernel_h"], params["kernel_w"]),
+            stride=params["stride_conv"],
+            padding=(padding_h, padding_w),
+        )
+
+        self.conv3 = nn.Conv2d(
+            in_channels=3*conv1_in_size+3*conv0_in_size,
+            out_channels=params["num_filters"],
+            kernel_size=(params["kernel_h"], params["kernel_w"]),
+            stride=params["stride_conv"],
+            padding=(padding_h, padding_w),
+        )
+
+
+        self.bn1 = nn.BatchNorm2d(num_features=conv1_in_size)
+        self.bn2 = nn.BatchNorm2d(num_features=conv1_in_size)
+        self.bn3 = nn.BatchNorm2d(num_features=conv1_in_size)
+        self.bn4 = nn.BatchNorm2d(num_features=conv1_in_size)
+
+        self.prelu = nn.PReLU()  # Learnable ReLU Parameter
+        self.outblock = outblock
+
+    def forward(self, x: Tensor) -> Tensor:
+        """
+        Feedforward through CompetitiveDenseBlock.
+
+        {in (Conv - BN from prev. block) -> PReLU} -> {Conv -> BN -> Maxout -> PReLU} x 2 -> {Conv -> BN} -> out
+        end with batch-normed output to allow maxout across skip-connections.
+
+        Parameters
+        ----------
+        x : Tensor
+            Input tensor (image or feature map).
+
+        Returns
+        -------
+        out
+            Output tensor (processed feature map).
+        """
+        # Activation from pooled input
+        x0 = self.prelu(x)
+
+        # Convolution block 1 (RF: 3x3)
+        x0 = self.conv0(x0)
+        x1_bn = self.bn1(x0)
+        # First Concat
+        x1_conca = torch.cat((x, x1_bn), dim=1)
+        x1 = self.prelu(x1_conca)
+
+        # Convolution block 2
+        x1 = self.conv1(x1)
+        x2_bn = self.bn2(x1)
+
+        # Second Concat
+        x2_conca = torch.cat((x, x2_bn, x1_conca),dim=1)
+        x2 = self.prelu(x2_conca)
+
+        # Convolution block 3
+        x3_bn = self.conv2(x2)
+
+        # Third Concat
+        x3_conca = torch.cat((x, x3_bn, x2_conca),dim=1)
+        x3 = self.prelu(x3_conca)
+
+        # Convolution block 4 (end with batch-normed output to allow maxout across skip-connections)
+        out = self.conv3(x3)
+
+        if not self.outblock:
+            out = self.bn4(out)
+
+        return out
+
+class UnetDenseBlockInput(nn.Module):
+    """
+    Define a competitive dense block comprising 3 convolutional layers, with BN/ReLU.
+
+    Attributes
+    ----------
+     params = {'num_channels': 1,
+               'num_filters': 64,
+               'kernel_h': 5,
+               'kernel_w': 5,
+               'stride_conv': 1,
+               'pool': 2,
+               'stride_pool': 2,
+               'num_classes': 44
+               'kernel_c':1
+               'input':True
+               }
+
+    Methods
+    -------
+    forward
+        Feedforward through graph.
+    """
+
+    def __init__(self, params: Dict, outblock: bool = False):
+        """
+        Construct CompetitiveDenseBlock object.
+
+        Parameters
+        ----------
+        params : Dict
+            Dictionary with parameters specifying block architecture.
+        outblock : bool
+            Flag indicating if last block (Default value = False).
+        """
+        super(UnetDenseBlockInput, self).__init__()
+
+        # Padding to get output tensor of same dimensions
+        padding_h = int((params["kernel_h"] - 1) / 2)
+        padding_w = int((params["kernel_w"] - 1) / 2)
+
+        # Sub-layer output sizes for BN; and
+        conv0_in_size = int(params["num_channels"])  # num_channels
+        conv1_in_size = int(params["num_filters"])
+        conv2_in_size = int(params["num_filters"])
+        out_size = (
+            params["num_filters_last"]
+            if "num_filters_last" in params
+            else params["num_filters"]
+        )
+
+        # Define the learnable layers
+        # Standard conv layers
+        self.conv0 = nn.Conv2d(
+            in_channels=conv0_in_size,
+            out_channels=params["num_filters"],
+            kernel_size=(params["kernel_h"], params["kernel_w"]),
+            stride=params["stride_conv"],
+            padding=(padding_h, padding_w),
+        )
+
+        self.conv1 = nn.Conv2d(
+            in_channels=conv1_in_size,
+            out_channels=params["num_filters"],
+            kernel_size=(params["kernel_h"], params["kernel_w"]),
+            stride=params["stride_conv"],
+            padding=(padding_h, padding_w),
+        )
+
+        self.conv2 = nn.Conv2d(
+            in_channels=2*conv1_in_size+conv0_in_size,
+            out_channels=params["num_filters"],
+            kernel_size=(params["kernel_h"], params["kernel_w"]),
+            stride=params["stride_conv"],
+            padding=(padding_h, padding_w),
+        )
+
+        # D \times D convolution for the last block
+        self.conv3 = nn.Conv2d(
+            in_channels=3*conv1_in_size+conv0_in_size*2,
+            out_channels=out_size,
+            kernel_size=(params["kernel_h"], params["kernel_w"]),
+            stride=params["stride_conv"],
+            padding=(padding_h, padding_w),
+        )
+
+        self.bn1 = nn.BatchNorm2d(num_features=conv1_in_size)
+        self.bn2 = nn.BatchNorm2d(num_features=conv1_in_size)
+        self.bn3 = nn.BatchNorm2d(num_features=conv1_in_size)
+        self.bn4 = nn.BatchNorm2d(num_features=out_size)
+
+        self.prelu = nn.PReLU()  # Learnable ReLU Parameter
+        self.outblock = outblock
+
+    def forward(self, x: Tensor) -> Tensor:
+        """
+        Feedforward through CompetitiveDenseBlock.
+
+        {in (Conv - BN from prev. block) -> PReLU} -> {Conv -> BN -> Maxout -> PReLU} x 2 -> {Conv -> BN} -> out
+        end with batch-normed output to allow maxout across skip-connections.
+
+        Parameters
+        ----------
+        x : Tensor
+            Input tensor (image or feature map).
+
+        Returns
+        -------
+        out
+            Output tensor (processed feature map).
+        """
+        # Activation from pooled input
+        x0 = self.prelu(x)
+
+        # Convolution block 1 (RF: 3x3)
+        x0 = self.conv0(x0)
+        x1_bn = self.bn1(x0)
+        x1 = self.prelu(x1_bn)
+
+        # Convolution block 2
+        x1 = self.conv1(x1)
+        x2_bn = self.bn2(x1)
+
+        # First concat
+        x2_conca = torch.cat((x,x2_bn, x1_bn),dim=1)
+        x2 = self.prelu(x2_conca)
+
+        # Convolution block 3
+        x2 = self.conv2(x2)
+        x3_bn = self.bn3(x2)
+
+        # Second Concat
+        x3_conca = torch.cat((x,x3_bn, x2_conca), dim=1)
+        x3 = self.prelu(x3_conca)
+
+        # Convolution block 4
+        x3 = self.conv3(x3)
+        out = self.bn4(x3)
 
         return out
 
@@ -402,7 +683,6 @@ class CompetitiveDenseBlockInput(nn.Module):
         """
         # Input batch normalization
         x0_bn = self.bn0(x)
-
         # Convolution block1 (RF: 3x3)
         x0 = self.conv0(x0_bn)
         x1_bn = self.bn1(x0)
@@ -645,6 +925,165 @@ class CompetitiveDecoderBlock(CompetitiveDenseBlock):
 
         return out_block
 
+class DenseEncoderBlockInput(UnetDenseBlockInput):
+    """
+    Encoder Block = CompetitiveDenseBlockInput + Max Pooling.
+    """
+
+    def __init__(self, params: Dict):
+        """
+        Construct CompetitiveEncoderBlockInput object.
+
+        Parameters
+        ----------
+        params : Dict
+            Parameters like number of channels, stride etc.
+        """
+        super(DenseEncoderBlockInput, self).__init__(
+            params
+        )  # The init of CompetitiveDenseBlock takes in params
+        self.maxpool = nn.MaxPool2d(
+            kernel_size=params["pool"],
+            stride=params["stride_pool"],
+            return_indices=True,
+        )  # For Unpooling later on with the indices
+
+    def forward(self, x: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
+        """
+        Feed forward trough Encoder Block.
+
+        * CompetitiveDenseBlockInput
+        * Max Pooling (+ retain indices)
+
+        Parameters
+        ----------
+        x : Tensor
+            Feature map from previous block.
+
+        Returns
+        -------
+        Tensor
+            The original feature map as received by the block.
+        Tensor
+            The maxpooled feature map after applying max pooling to the original feature map.
+        Tensor
+            The indices of the maxpool operation.
+        """
+        out_block = super(DenseEncoderBlockInput, self).forward(
+            x
+        )  # To be concatenated as Skip Connection
+        out_encoder, indices = self.maxpool(
+            out_block
+        )  # Max Pool as Input to Next Layer
+        return out_encoder, out_block, indices
+
+class DenseDecoderBlock(UnetDenseBlock):
+    def __init__(self, params: Dict, outblock: bool = False):
+        """
+        Construct CompetitiveDecoderBlock object.
+
+        Parameters
+        ----------
+        params : Dict
+            Parameters like number of channels, stride etc.
+        outblock : bool
+            Flag, indicating if last block of network before classifier
+            is created.(Default value = False)
+        """
+        super(DenseDecoderBlock, self).__init__(params)
+        # Padding to get output tensor of same dimensions
+        self.unpool = nn.MaxUnpool2d(
+            kernel_size=params["pool"], stride=params["stride_pool"]
+        )
+
+    def forward(self, x: Tensor, out_block: Tensor, indices: Tensor) -> Tensor:
+        """
+        Feed forward trough Decoder block.
+
+        * Unpooling of feature maps from lower block
+        * Maxout combination of unpooled map + skip connection
+        * Forwarding toward CompetitiveDenseBlock
+
+        Parameters
+        ----------
+        x : Tensor
+            Input feature map from lower block (gets unpooled and maxed with out_block).
+        out_block : Tensor
+            Skip connection feature map from the corresponding Encoder.
+        indices : Tensor
+            Indices for unpooling from the corresponding Encoder (maxpool op).
+
+        Returns
+        -------
+        out_block
+            Processed feature maps.
+        """
+        unpool = self.unpool(x, indices)
+        concat_max = torch.cat((unpool, out_block),dim=1)
+        out_block = super(DenseDecoderBlock, self).forward(concat_max)
+
+        return out_block
+
+
+class DenseEncoderBlock(UnetDenseBlock):
+    """
+    Encoder Block = CompetitiveDenseBlock + Max Pooling.
+
+    Attributes
+    ----------
+    maxpool
+        Maxpool layer.
+
+    Methods
+    -------
+    forward
+        Feed forward trough graph.
+    """
+
+    def __init__(self, params: Dict):
+        """
+        Construct CompetitiveEncoderBlock object.
+
+        Parameters
+        ----------
+        params : Dict
+            Parameters like number of channels, stride etc.
+        """
+        super(DenseEncoderBlock, self).__init__(params)
+        self.maxpool = nn.MaxPool2d(
+            kernel_size=params["pool"],
+            stride=params["stride_pool"],
+            return_indices=True,
+        )  # For Unpooling later on with the indices
+
+    def forward(self, x: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
+        """
+        Feed forward trough Encoder Block.
+
+        * CompetitiveDenseBlock
+        * Max Pooling (+ retain indices)
+
+        Parameters
+        ----------
+        x : Tensor
+            Feature map from previous block.
+
+        Returns
+        -------
+        out_encoder : Tensor
+            Original feature map.
+        out_block : Tensor
+            Maxpooled feature map.
+        indicies : Tensor
+            Maxpool indices.
+        """
+        out_block = super(DenseEncoderBlock, self).forward(
+            x
+        )  # To be concatenated as Skip Connection
+        out_encoder, indices = self.maxpool(
+            out_block
+        )  # Max Pool as Input to Next Layer
+        return out_encoder, out_block, indices
 
 class OutputDenseBlock(nn.Module):
     """
@@ -818,3 +1257,4 @@ class ClassifierBlock(nn.Module):
         logits = self.conv(x)
 
         return logits
+        

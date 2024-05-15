@@ -1,8 +1,9 @@
 MODEL:
-  MODEL_NAME: "FastSurferCNN"
+  MODEL_NAME: "FastSurferUNET"
   NUM_CLASSES: 2
   LOSS_FUNC: "combined"
   NUM_FILTERS: 64
+  NUM_FILTERS2: 64
   NUM_FILTERS_INTERPOL: 32
   NUM_CHANNELS: 7
   KERNEL_H: 3
@@ -19,8 +20,9 @@ MODEL:
   OUT_TENSOR_WIDTH: 256
   OUT_TENSOR_HEIGHT: 256
 
+
 TRAIN:
-  BATCH_SIZE: 8
+  BATCH_SIZE: 2
   LOG_INTERVAL: 10
   RESUME: false
   RESUME_EXPR_NUM: "Default"
@@ -31,7 +33,7 @@ TRAIN:
   NUM_WORKERS: 1
 
 TEST:
-  BATCH_SIZE: 16
+  BATCH_SIZE: 2
 
 DATA:
   PATH_HDF5_TRAIN: "/localmount/volume-ssd/users/uline/fastCNN_split/axial/train_axial.hdf5"
@@ -43,22 +45,17 @@ DATA_LOADER:
   PIN_MEMORY: true
 
 OPTIMIZER:
-  BASE_LR: 0.01
-  LR_SCHEDULER: "cosineWarmRestarts"
-  GAMMA: 0.3
-  STEP_SIZE: 5
-  ETA_MIN: 0.0001
-  T_ZERO: 10
-  T_MULT: 2
-  MOMENTUM: 0.90
-  DAMPENING: 0.0
-  NESTEROV: true
-  WEIGHT_DECAY: 0.0001
-  OPTIMIZING_METHOD: "adamW"
+  OPTIMIZING_METHOD : 'adamW'
+  WEIGHT_DECAY : 1e-4
+  BASE_LR : 0.05
+  GAMMA: 0.1
+  LR_SCHEDULER : 'multiStep'
+  MILESTONE: [70]
+  MOMENTUM : 0.95
 
 NUM_GPUS: 1
-LOG_DIR: "FastSurferCNN"
-EXPR_NUM: "FastSurferCNN_axial"
+LOG_DIR: "FastSurferUNET"
+EXPR_NUM: "FastSurferUNET_axial"
 RNG_SEED: 1
-SUMMARY_PATH: "FastSurferCNN/summary/FastsurferCNN_axial"
-CONFIG_LOG_PATH: "FastSurferCNN/config/FastsurferCNN_axial"
+SUMMARY_PATH: "FastSurferUNET/summary/FastsurferUNET_axial"
+CONFIG_LOG_PATH: "FastSurferUNET/config/FastsurferUNET_axial"

@@ -31,12 +31,12 @@ TRAIN:
   NUM_WORKERS: 1
 
 TEST:
-  BATCH_SIZE: 16
+  BATCH_SIZE: 8
 
 DATA:
-  PATH_HDF5_TRAIN: "/localmount/volume-ssd/users/uline/fastCNN_split/axial/train_axial.hdf5"
-  PATH_HDF5_VAL: "/localmount/volume-ssd/users/uline/fastCNN_split/axial/val_axial.hdf5"
-  PLANE: "axial"
+  PATH_HDF5_TRAIN: "/localmount/volume-ssd/users/uline/fastCNN_split/coronal/train_coronal.hdf5"
+  PATH_HDF5_VAL: "/localmount/volume-ssd/users/uline/fastCNN_split/coronal/val_coronal.hdf5"
+  PLANE: "coronal"
 
 DATA_LOADER:
   NUM_WORKERS: 8
@@ -58,7 +58,7 @@ OPTIMIZER:
 
 NUM_GPUS: 1
 LOG_DIR: "FastSurferCNN"
-EXPR_NUM: "FastSurferCNN_axial"
+EXPR_NUM: "FastSurferCNN_coronal"
 RNG_SEED: 1
-SUMMARY_PATH: "FastSurferCNN/summary/FastsurferCNN_axial"
-CONFIG_LOG_PATH: "FastSurferCNN/config/FastsurferCNN_axial"
+SUMMARY_PATH: "FastSurferCNN/summary/FastsurferCNN_coronal"
+CONFIG_LOG_PATH: "FastSurferCNN/config/FastsurferCNN_coronal"

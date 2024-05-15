@@ -2,7 +2,7 @@ import json
 import argparse
 from pathlib import Path
 
-def create_dataset_json(parent_dir, output_file, data_type="FLAIR"):
+def create_dataset_json(parent_dir, output_file, data_type="FLAIR+T1"):
     """
     Creates a JSON file that describes the dataset structure for medical imaging data.
 
@@ -35,6 +35,7 @@ def create_dataset_json(parent_dir, output_file, data_type="FLAIR"):
     training_images_path = parent_path / "imagesTr"
     training_labels_path = parent_path / "labelsTr"
     test_images_path = parent_path / "imagesTs"
+    test_labels_path = parent_path / "labelsTs"
 
     if data_type == "FLAIR+T1":
         dataset_json["modality"] = {"0": "FLAIR", "1": "T1"}
@@ -53,7 +54,7 @@ def create_dataset_json(parent_dir, output_file, data_type="FLAIR"):
 
     # Scan for test images
     if test_images_path.exists():
-        test_images = sorted([f.name for f in test_images_path.glob('*.nii.gz')])
+        test_images = sorted([f.name for f in test_labels_path.glob('*.nii.gz')])
         for img in test_images:
             dataset_json["test"].append(str(test_images_path / img))
 
@@ -69,7 +70,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Create a dataset JSON file for medical imaging data.")
     parser.add_argument("parent_dir", type=str, help="Directory where the dataset is located.")
     parser.add_argument("output_file", type=str, help="Path where the JSON file will be saved.")
-    parser.add_argument("--data_type", type=str, choices=["FLAIR", "FLAIR+T1"], default="FLAIR", help="Type of medical imaging data. Default is 'FLAIR'.")
+    parser.add_argument("--data_type", type=str, choices=["FLAIR", "FLAIR+T1"], default="FLAIR+T1", help="Type of medical imaging data. Default is 'FLAIR'.")
 
     args = parser.parse_args()
     create_dataset_json(args.parent_dir, args.output_file, args.data_type)

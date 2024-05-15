@@ -19,6 +19,8 @@ _C.MODEL.LOSS_FUNC = "combined"
 # Filter dimensions for DenseNet (all layers same)
 _C.MODEL.NUM_FILTERS = 71
 
+_C.MODEL.NUM_FILTERS2 = 64
+
 # Filter dimensions for Input Interpolation block (currently all the same)
 _C.MODEL.NUM_FILTERS_INTERPOL = 32
 
@@ -64,6 +66,10 @@ _C.MODEL.CROP_POSITION = "top_left"
 # Out Tensor dimensions for interpolation layer
 _C.MODEL.OUT_TENSOR_WIDTH = 320
 _C.MODEL.OUT_TENSOR_HEIGHT = 320
+
+_C.DOWN_1= 96
+_C.DOWN_2= 128
+_C.DOWN_3= 256
 
 # ---------------------------------------------------------------------------- #
 # Training options
@@ -205,6 +211,9 @@ _C.OPTIMIZER.DAMPENING = 0.0
 
 # Nesterov momentum
 _C.OPTIMIZER.NESTEROV = True
+
+#MILESTONE
+_C.OPTIMIZER.MILESTONE = [40]
 
 # L2 regularization
 _C.OPTIMIZER.WEIGHT_DECAY = 1e-4

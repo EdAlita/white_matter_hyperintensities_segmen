@@ -27,7 +27,7 @@ from collections import OrderedDict
 import skimage.measure as skm
 
 from scipy.ndimage import _ni_support
-from scipy.ndimage.morphology import distance_transform_edt, binary_erosion,\
+from scipy.ndimage.morphology import distance_transform_edt, binary_erosion, binary_dilation,\
                                      generate_binary_structure
 
 def get_truepos(A, B):
@@ -86,7 +86,12 @@ def get_sensitivity(A, B):
 
     return (TP / (TP + FN))
 
-
+def get_F1(A,B):
+    """Return F1 score"""
+    TP = get_truepos(A, B)
+    FP = get_falseneg(A, B)
+    FN = get_falsepos(A, B)
+    return (2 * TP / (2*TP + FP + FN) )
 def get_specificity(A, B):
     """Return specificity"""
     TN = get_trueneg(A, B)
@@ -403,7 +408,16 @@ def get_values(A,B,measures,background=False,voxelspacing=None):
             values['HD95']=h95
         else:
             values['HD95'] = np.nan
-
+    if 'F1' in measures:
+        if not background:
+            values['F1']= get_F1(A,B)
+        else:
+            values['F1']= np.nan
+    if 'Recall' in measures:
+        if not background:
+            values['Recall']= get_sensitivity(A,B)
+        else:
+            values['Recall']= np.nan
     return values
 
 
@@ -455,7 +469,7 @@ def get_HD(result, reference, voxelspacing=None, connectivity=1):
 
     hd1 = __surface_distances(result, reference, voxelspacing, connectivity)
     hd2 = __surface_distances(reference, result, voxelspacing, connectivity)
-    hd = max(hd1.max(), hd2.max())
+    hd = max(hd1.min(), hd2.min())
     hd95 = np.percentile(np.hstack((hd1, hd2)), 95)
     #hd50 = np.percentile(np.hstack((hd1, hd2)), 50)
     return hd, hd95
@@ -519,6 +533,8 @@ def __surface_distances(result, reference, voxelspacing=None, connectivity=1):
     """
     result = np.atleast_1d(result.astype(bool))
     reference = np.atleast_1d(reference.astype(bool))
+    #binary_mask = binary_dilation(reference, structure=generate_binary_structure(rank=3, connectivity=1),iterations=2).astype(result.dtype)
+    #result = np.logical_and(result, binary_mask)
     if voxelspacing is not None:
         voxelspacing = _ni_support._normalize_sequence(voxelspacing, result.ndim)
         voxelspacing = np.asarray(voxelspacing, dtype=np.float64)

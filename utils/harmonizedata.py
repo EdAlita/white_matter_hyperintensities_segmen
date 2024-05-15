@@ -14,6 +14,7 @@ from nibabel.processing import resample_to_output
 from pathlib import Path
 import numpy as np
 import time
+import sys
 
 def rescale_image(img_data):
     # Conform intensities
@@ -46,7 +47,7 @@ def getscale(data, dst_min, dst_max, f_low=0.0, f_high=0.999):
     if src_min < 0.0:
         sys.exit('ERROR: Min value in input is below 0.0!')
 
-    # print("Input:    min: " + format(src_min) + "  max: " + format(src_max))
+    print("Input:    min: " + format(src_min) + "  max: " + format(src_max))
 
     if f_low == 0.0 and f_high == 1.0:
         return src_min, 1.0
@@ -196,9 +197,9 @@ def data_harmonization(root_path: Path,verbose: bool = False):
                 if verbose:
                     print(f'Processing {file.name}')
 
-                img = nib.load(file)
-                zooms, shape = img.header.get_zooms(), img.header.get_data_shape()
-
+                img_out = nib.load(file)
+                zooms, shape = img_out.header.get_zooms(), img_out.header.get_data_shape()
+                zooms = (round(zooms[0],1),round(zooms[1],1),round(zooms[2],1))
                 if verbose:
                     print(f'Original size {shape} and Original zoom {zooms}')
                     print('------------------------------------------------')
@@ -208,12 +209,12 @@ def data_harmonization(root_path: Path,verbose: bool = False):
                     start_time = time.time()
                     if 'lesion' in file.name:
                         if verbose: print('[info]: Using Nearest...')
-                        img_out = interpolate_volume(img,interpolation='nearest')
+                        img_out = interpolate_volume(img_out,interpolation='nearest')
                         if verbose: print(f'[info]: new shape {img_out.header.get_data_shape()}')
                         if verbose: print(f"[info]: Execution time: {time.time() - start_time} seconds")
                     else:
                         if verbose: print('[info]: Using bspline...')
-                        img_out = interpolate_volume(img)
+                        img_out = interpolate_volume(img_out)
                         if verbose: print(f'[info]: new shape {img_out.header.get_data_shape()}')
                         if verbose: print(f"[info]: Execution time: {time.time() - start_time} seconds")
 
@@ -221,12 +222,14 @@ def data_harmonization(root_path: Path,verbose: bool = False):
                     if verbose: print(f'[info]:RAS image Conversion.....')
                     img_out = nib.as_closest_canonical(img_out)
 
-                img_array = np.asarray(img_out.get_fdata(), dtype=np.uint8)
+                img_array = np.asarray(img_out.get_fdata())
 
                 if shape != (256, 256, 256):
                     if verbose: print(f'[info]: 256*256*256 remapping ....')
                     img_array = map_size(img_array, [256, 256, 256], verbose)
+
                 if not 'lesion' in file.name:
+                    img_array[img_array < 0] = 0
                     if verbose: print('[info]: Intesity Rescale ....')
                     img_array = rescale_image(img_array)
 
