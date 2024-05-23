@@ -18,8 +18,6 @@ def get_dataloader(cfg: yacs.config.CfgNode, mode: str):
         shuffle = True
         logger.info(f"loading {mode.capitalize()} data ... from {data_path}")
 
-
-
         if cfg.MODEL.NUM_CHANNELS == 14:
             include = ["img","img2","label", "weight"]
             include_img = ["img","img2"]
@@ -136,7 +134,7 @@ def get_dataloader(cfg: yacs.config.CfgNode, mode: str):
     )
     return dataloader
 
-def get_dataloader_biobank(cfg: yacs.config.CfgNode, mode: str, data_path=None, img_list=None):
+def get_dataloader_biobank(cfg: yacs.config.CfgNode, mode: str, batch=None):
     assert mode in ['train', 'val'], f'dataloader mode is invalid: {mode}'
 
     if mode == 'train':
@@ -227,7 +225,7 @@ def get_dataloader_biobank(cfg: yacs.config.CfgNode, mode: str, data_path=None, 
             [tio.OneOf(all_augs, p=0.5)], include=include
         )
 
-        dataset = dset.Dataset_t2(dataset_list=data_path,images_list=img_list,cfg=cfg,transforms=transform)
+        dataset = dset.Dataset_t2(batch=batch, cfg=cfg, transforms=transform)
     else:
         data_path = cfg.DATA.PATH_HDF5_VAL
         shuffle = False
@@ -255,6 +253,19 @@ def get_dataloader_biobank(cfg: yacs.config.CfgNode, mode: str, data_path=None, 
         shuffle=shuffle,
         pin_memory=True
     )
+    return dataloader
+
+def get_dataloader_Cases(cfg: yacs.config.CfgNode,dataset,images_list):
+    dataset = dset.cases_dataset(cfg=cfg, dataset=dataset, images_list=images_list)
+
+    dataloader = DataLoader(
+        dataset=dataset,
+        batch_size=10,
+        num_workers=cfg.TRAIN.NUM_WORKERS,
+        shuffle=True,
+        pin_memory=True
+    )
+
     return dataloader
 
 if __name__ == '__main__':

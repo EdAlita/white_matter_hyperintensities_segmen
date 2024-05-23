@@ -362,10 +362,10 @@ class Trainer:
         logger.info("Summary path {}".format(self.cfg.SUMMARY_PATH))
         # Perform the training loop.
         logger.info("Start epoch: {}".format(start_epoch + 1))
-        best_epoch = -1
-        early_stopping_tresh = 10
 
-        for epoch in range(start_epoch, self.cfg.TRAIN.NUM_EPOCHS):
+        early_stopping_tresh = 10
+        final_epoch = start_epoch + self.cfg.TRAIN.NUM_EPOCHS
+        for epoch in range(start_epoch, final_epoch):
             self.train(train_loader, optimizer, scheduler, train_meter, epoch=epoch+1)
 
             if epoch % 10 == 0:
@@ -405,11 +405,6 @@ class Trainer:
                     scheduler,
                     best=True,
                 )
-                best_epoch = epoch
-            elif epoch - best_epoch > early_stopping_tresh:
-                logger.info(f"Early stopped at trainning at epoch {epoch+1}")
-                break
-
 if __name__ == "__main__":
 
     import argparse

@@ -84,69 +84,73 @@ class Trainer:
         epoch_start = time.time()
         loss_batch = np.zeros(1)
 
-        for curr_iter, batch in tqdm(enumerate(train_loader), total=len(train_loader)):
-            images, labels, weights = (
-                batch["image"].to(self.device),
-                batch["label"].to(self.device),
-                batch["weight"].to(self.device)
-            )
+        for _, batches in tqdm(enumerate(train_loader), total=len(train_loader)):
+            slice_train_loader = loader.get_dataloader_biobank(self.cfg, "train", batches)
 
-            if self.cfg.MODEL.NUM_CHANNELS == 14:
-                images2 = batch["image2"].to(self.device)
-                inputs = torch.cat((images, images2), dim=1)
-            elif self.cfg.MODEL.NUM_CHANNELS == 21:
-                images2 = batch["image2"].to(self.device)
-                images3 = batch["image3"].to(self.device)
-                inputs = torch.cat((images, images2, images3), dim=1)
-            else:
-                inputs = images
+            for curr_iter, batch in tqdm(enumerate(slice_train_loader), total=len(slice_train_loader)):
 
-            if not self.subepoch or (curr_iter) % (16 / self.cfg.TRAIN.BATCH_SIZE) == 0:
-                optimizer.zero_grad()  # every second epoch to get batchsize of 16 if using 8
-
-            pred = self.model(inputs)
-            loss_total, loss_dice, loss_ce = self.loss_func(pred, labels, weights)
-            train_meter.update_stats(pred, labels, loss_total)
-            train_meter.log_iter(curr_iter, epoch)
-            if scheduler is not None:
-                train_meter.write_summary(
-                    loss_total, scheduler.get_last_lr(), loss_ce, loss_dice
-                )
-            else:
-                train_meter.write_summary(
-                    loss_total, [self.cfg.OPTIMIZER.BASE_LR], loss_ce, loss_dice
+                images, labels, weights = (
+                    batch["image"].to(self.device),
+                    batch["label"].to(self.device),
+                    batch["weight"].to(self.device)
                 )
 
-            loss_total.backward()
-            if (
-                not self.subepoch
-                or (curr_iter + 1) % (16 / self.cfg.TRAIN.BATCH_SIZE) == 0
-            ):
-                optimizer.step()  # every second epoch to get batchsize of 16 if using 8
+                if self.cfg.MODEL.NUM_CHANNELS == 14:
+                    images2 = batch["image2"].to(self.device)
+                    inputs = torch.cat((images, images2), dim=1)
+                elif self.cfg.MODEL.NUM_CHANNELS == 21:
+                    images2 = batch["image2"].to(self.device)
+                    images3 = batch["image3"].to(self.device)
+                    inputs = torch.cat((images, images2, images3), dim=1)
+                else:
+                    inputs = images
+
+                if not self.subepoch or (curr_iter) % (16 / self.cfg.TRAIN.BATCH_SIZE) == 0:
+                    optimizer.zero_grad()  # every second epoch to get batchsize of 16 if using 8
+
+                pred = self.model(inputs)
+                loss_total, loss_dice, loss_ce = self.loss_func(pred, labels, weights)
+                train_meter.update_stats(pred, labels, loss_total)
+                train_meter.log_iter(curr_iter, epoch)
                 if scheduler is not None:
-                    scheduler.step()
-                 #   scheduler.step(epoch + curr_iter / len(train_loader))
-            loss_batch += loss_total.item()
+                    train_meter.write_summary(
+                        loss_total, scheduler.get_last_lr(), loss_ce, loss_dice
+                    )
+                else:
+                    train_meter.write_summary(
+                        loss_total, [self.cfg.OPTIMIZER.BASE_LR], loss_ce, loss_dice
+                    )
 
-            # Plot sample predictions
-            if curr_iter == len(train_loader) - 2:
-                plt_title = "Training Results Epoch " + str(epoch)
+                loss_total.backward()
+                if (
+                    not self.subepoch
+                    or (curr_iter + 1) % (16 / self.cfg.TRAIN.BATCH_SIZE) == 0
+                ):
+                    optimizer.step()  # every second epoch to get batchsize of 16 if using 8
+                    if scheduler is not None:
+                        scheduler.step()
+                     #  scheduler.step(epoch + curr_iter / len(train_loader))
+                loss_batch += loss_total.item()
 
-                file_save_name = os.path.join(
-                    self.plot_dir, "Epoch_" + str(epoch) + "_Training_Predictions.pdf"
+                # Plot sample predictions
+                if curr_iter == len(train_loader) - 2:
+                    plt_title = "Training Results Epoch " + str(epoch)
+
+                    file_save_name = os.path.join(
+                        self.plot_dir, "Epoch_" + str(epoch) + "_Training_Predictions.pdf"
+                    )
+
+                    _, batch_output = torch.max(pred, dim=1)
+                    plot_predictions(
+                        images, labels, batch_output, plt_title, file_save_name
+                    )
+
+            train_meter.log_epoch(epoch)
+            logger.info(
+                "Training epoch {} finished in {:.04f} seconds".format(
+                    epoch, time.time() - epoch_start
                 )
-
-                _, batch_output = torch.max(pred, dim=1)
-                plot_predictions(
-                    images, labels, batch_output, plt_title, file_save_name
-                )
-
-        train_meter.log_epoch(epoch)
-        logger.info(
-            "Training epoch {} finished in {:.04f} seconds".format(
-                epoch, time.time() - epoch_start
             )
-        )
 
     @torch.no_grad()
     def eval(
@@ -297,20 +301,9 @@ class Trainer:
             img_list = ['FLAIR.nii.gz','T1.nii.gz']
 
         val_loader = loader.get_dataloader_biobank(self.cfg, "val")
-        train_loader = loader.get_dataloader_biobank(self.cfg,
-                                                     "train",
-                                                     data_path=subjects_dirs,
-                                                     img_list=img_list)
-
-        dict = next(iter(train_loader))
-
-        images = dict["image"][:,4,:,:].unsqueeze(1)
-        labels = dict["label"].unsqueeze(1)
-        weigths = dict["weight"].unsqueeze(1)
-
-        grid = make_grid(images, nrow=4)
-        grid2 = make_grid(labels*255, nrow=4, normalize=False)
-        grid3 = make_grid(weigths, nrow=4, normalize=False)
+        train_loader = loader.get_dataloader_Cases(self.cfg,
+                                                     dataset=subjects_dirs,
+                                                     images_list=img_list)
 
         update_num_steps(train_loader, self.cfg)
         self.model = self.model.to(self.device)
@@ -354,10 +347,6 @@ class Trainer:
         # Create tensorboard summary writer
 
         writer = SummaryWriter(self.cfg.SUMMARY_PATH, flush_secs=15)
-
-        writer.add_image('Image', grid, 0)
-        writer.add_image('Label', grid + grid2, 0)
-        writer.add_image('Weigths', grid3, 0)
 
         train_meter = Meter(
             self.cfg,

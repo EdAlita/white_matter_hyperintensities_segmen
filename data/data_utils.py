@@ -63,15 +63,14 @@ def filter_blank_slices_thick(
     label_vol : np.ndarray
         [MISSING].
     """
-    # Get indices of all slices with more than threshold labels/pixels
-    select_slices = np.sum(label_vol, axis=(1,2)) > threshold
+    select_slices = np.sum(label_vol, axis=(1, 2)) > threshold
     non_zero = np.sum(label_vol, axis=(1, 2)) > 0.0
-    not_selected = np.sum(label_vol, axis=(1,2)) < threshold
+    not_selected = np.sum(label_vol, axis=(1, 2)) < threshold
     num = sum(select_slices)
     no_num = sum(not_selected)
-    #print(f"{num} out of {no_num}")
-    while sum(not_selected) != int(num*0.10+1):
-        n = np.random.randint(low=0, high=255)
+    N, _, _ = label_vol.shape
+    while sum(not_selected) != int(num * 0.10 + 1):
+        n = np.random.randint(low=0, high=N-1)
         not_selected[n] = False
 
     select = select_slices + not_selected

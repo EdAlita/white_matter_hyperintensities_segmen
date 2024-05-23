@@ -282,7 +282,7 @@ if __name__ == "__main__":
     }
 
     dataset_generator = H5pyDataset(params=dataset_params)
-    dataset_generator.create_hdf5_dataset(15)
+    dataset_generator.create_hdf5_dataset(10)
 
 
 

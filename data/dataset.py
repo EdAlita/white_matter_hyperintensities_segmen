@@ -9,11 +9,10 @@ import yacs.config
 import nibabel as nib
 from tqdm import tqdm
 
-
-
 from config.defaults import get_cfg_defaults
 from utils.wm_logger import loggen
-from data.data_utils import get_thick_slices, sagittal_transform_coronal, sagittal_transform_axial, filter_blank_slices_thick, create_weight_mask
+from data.data_utils import get_thick_slices, sagittal_transform_coronal, sagittal_transform_axial, \
+    filter_blank_slices_thick, create_weight_mask
 
 logger = loggen(__name__)
 
@@ -36,7 +35,7 @@ class Dataset_V1(Dataset):
         self.subjects = []
         self.zooms = []
         self.weights = []
-        self.cfg =cfg
+        self.cfg = cfg
         self.transforms = transforms
 
         start = time.time()
@@ -55,7 +54,6 @@ class Dataset_V1(Dataset):
                     self.images.extend(img_dataset)
 
                     if self.cfg.MODEL.NUM_CHANNELS == 14 or self.cfg.MODEL.NUM_CHANNELS == 21:
-
                         img_dataset2 = hf[f"{size}"]["orig2_dataset"]
                         logger.info(
                             "Processed 2nd volumes of size {} in {:.3f} seconds".format(
@@ -65,7 +63,6 @@ class Dataset_V1(Dataset):
                         self.images2.extend(img_dataset2)
 
                     if self.cfg.MODEL.NUM_CHANNELS == 21:
-
                         img_dataset3 = hf[f"{size}"]["orig3_dataset"]
                         logger.info(
                             "Processed 3rd volumes of size {} in {:.3f} seconds".format(
@@ -136,10 +133,10 @@ class Dataset_V1(Dataset):
                 )
 
             return {
-            "image": tx_sample["image"],
-            "image2": tx_sample["image2"],
-            "label": tx_sample["label"],
-            "weight": tx_sample["weight"]
+                "image": tx_sample["image"],
+                "image2": tx_sample["image2"],
+                "label": tx_sample["label"],
+                "weight": tx_sample["weight"]
             }
         elif self.cfg.MODEL.NUM_CHANNELS == 21:
             img2 = self.images2[index]
@@ -157,11 +154,11 @@ class Dataset_V1(Dataset):
                 )
 
             return {
-            "image": tx_sample["image"],
-            "image2": tx_sample["image2"],
-            "image3": tx_sample["image3"],
-            "label": tx_sample["label"],
-            "weight": tx_sample["weight"]
+                "image": tx_sample["image"],
+                "image2": tx_sample["image2"],
+                "image3": tx_sample["image3"],
+                "label": tx_sample["label"],
+                "weight": tx_sample["weight"]
             }
         else:
 
@@ -175,15 +172,17 @@ class Dataset_V1(Dataset):
                 )
 
             return {
-            "image": tx_sample["image"],
-            "label": tx_sample["label"],
-            "weight": tx_sample["weight"]
+                "image": tx_sample["image"],
+                "label": tx_sample["label"],
+                "weight": tx_sample["weight"]
             }
+
     def __len__(self):
         """
         Get count.
         """
         return self.count
+
 
 class Dataset_t1(Dataset):
     """
@@ -203,7 +202,7 @@ class Dataset_t1(Dataset):
         self.subjects = []
         self.zooms = []
         self.weights = []
-        self.cfg =cfg
+        self.cfg = cfg
         self.transforms = transforms
 
         start = time.time()
@@ -222,7 +221,6 @@ class Dataset_t1(Dataset):
                     self.images.extend(img_dataset)
 
                     if self.cfg.MODEL.NUM_CHANNELS == 14 or self.cfg.MODEL.NUM_CHANNELS == 21:
-
                         img_dataset2 = hf[f"{size}"]["orig2_dataset"]
                         logger.info(
                             "Processed 2nd volumes of size {} in {:.3f} seconds".format(
@@ -232,7 +230,6 @@ class Dataset_t1(Dataset):
                         self.images2.extend(img_dataset2)
 
                     if self.cfg.MODEL.NUM_CHANNELS == 21:
-
                         img_dataset3 = hf[f"{size}"]["orig3_dataset"]
                         logger.info(
                             "Processed 3rd volumes of size {} in {:.3f} seconds".format(
@@ -331,10 +328,10 @@ class Dataset_t1(Dataset):
             img2 = torch.clamp(img2 / 255.0, min=0.0, max=1.0)
 
             return {
-            "image": img,
-            "image2": img2,
-            "label": label,
-            "weight": weight
+                "image": img,
+                "image2": img2,
+                "label": label,
+                "weight": weight
             }
         elif self.cfg.MODEL.NUM_CHANNELS == 21:
             img2 = self.images2[index]
@@ -365,11 +362,11 @@ class Dataset_t1(Dataset):
             img2 = torch.clamp(img2 / 255.0, min=0.0, max=1.0)
             img3 = torch.clamp(img3 / 255.0, min=0.0, max=1.0)
             return {
-            "image": img,
-            "image2": img2,
-            "image3": img3,
-            "label": label,
-            "weight": weight
+                "image": img,
+                "image2": img2,
+                "image3": img3,
+                "label": label,
+                "weight": weight
             }
         else:
 
@@ -380,15 +377,17 @@ class Dataset_t1(Dataset):
             img = torch.clamp(img / 255.0, min=0.0, max=1.0)
 
             return {
-            "image": img,
-            "label": label,
-            "weight": weight
+                "image": img,
+                "label": label,
+                "weight": weight
             }
+
     def __len__(self):
         """
         Get count.
         """
         return self.count
+
 
 class Dataset_t2(Dataset):
     """
@@ -397,11 +396,9 @@ class Dataset_t2(Dataset):
 
     def __init__(
             self,
-            dataset_list,
-            images_list,
+            batch,
             cfg: yacs.config.CfgNode,
             transforms: Optional = None):
-        self.images_list = images_list
         self.images = []
         self.images2 = []
         self.images3 = []
@@ -409,89 +406,76 @@ class Dataset_t2(Dataset):
         self.subjects = []
         self.zooms = []
         self.weights = []
-        self.cfg =cfg
+        self.cfg = cfg
         self.transforms = transforms
 
         self.plane = cfg.DATA.PLANE
-        start = time.time()
+        if self.cfg.MODEL.NUM_CHANNELS == 14:
+            volume, volume2, gt, weight = (
+                    batch["image"],
+                    batch["image2"],
+                    batch["label"],
+                    batch["weight"]
+                )
 
-        for subject in tqdm(dataset_list,desc="Loading trainning data......"):
+            volume3 = volume
 
-            volume_img = nib.load(str(subject / self.images_list[0]))
-            gt_img = nib.load(str(subject / 'lesion.nii.gz'))
-
-            if self.cfg.MODEL.NUM_CHANNELS == 14:
-                volume2_img = nib.load(str(subject /self.images_list[1]))
-                volume3_img = nib.load(str(subject /self.images_list[1]))
-                thicknes = cfg.MODEL.NUM_CHANNELS // 4
-            elif self.cfg.MODEL.NUM_CHANNELS == 21:
-                volume2_img = nib.load(str(subject /self.images_list[1]))
-                volume3_img = nib.load(str(subject /self.images_list[2]))
-                thicknes = cfg.MODEL.NUM_CHANNELS // 6
-            else:
-                volume2_img = nib.load(str(subject /self.images_list[0]))
-                volume3_img = nib.load(str(subject /self.images_list[0]))
-                thicknes = cfg.MODEL.NUM_CHANNELS // 2
-
-            volume_img = nib.as_closest_canonical(volume_img)
-            volume2_img = nib.as_closest_canonical(volume2_img)
-            volume3_img = nib.as_closest_canonical(volume3_img)
-            gt_img = nib.as_closest_canonical(gt_img)
-
-            gt = np.asarray(
-                gt_img.get_fdata(), dtype=np.uint8
+        else:
+            volume, gt, weight = (
+                batch["image"],
+                batch["label"],
+                batch["weight"]
             )
-            volume = np.asarray(
-                volume_img.get_fdata(), dtype=np.uint8
-            )
-            volume2 = np.asarray(
-                volume2_img.get_fdata(), dtype=np.uint8
-            )
-            volume3 = np.asarray(
-                volume3_img.get_fdata(), dtype=np.uint8
-            )
+            volume3 = volume
+            volume2 = volume
 
-            if self.plane == "axial":
-                volume = sagittal_transform_axial(volume)
-                volume2 = sagittal_transform_axial(volume2)
-                volume3 = sagittal_transform_axial(volume3)
-                gt = sagittal_transform_axial(gt)
+        volume, volume2, volume3, gt, weight = (
+            volume.squeeze(1),
+            volume2.squeeze(1),
+            volume3.squeeze(1),
+            gt.squeeze(1),
+            weight.squeeze(1)
+        )
 
-            if self.plane == "coronal":
-                volume = sagittal_transform_coronal(volume)
-                volume2 = sagittal_transform_coronal(volume2)
-                volume3 = sagittal_transform_coronal(volume3)
-                gt = sagittal_transform_coronal(gt)
+        N, D, H, W = volume.shape
 
-            volume_thick = get_thick_slices(volume, thicknes)
-            volume2_thick = get_thick_slices(volume2, thicknes)
-            volume3_thick = get_thick_slices(volume3, thicknes)
+        volume, volume2, volume3, gt, weight = (
+            volume.view(N * D, H, W),
+            volume2.view(N * D, H, W),
+            volume3.view(N * D, H, W),
+            gt.view(N * D, H, W),
+            weight.view(N * D, H, W)
+        )
 
-            weight = create_weight_mask(
-                gt,
-                max_weight=5,
-                max_edge_weight=5,
-                gradient=True
-            )
+        volume, volume2, volume3, gt, weight = (
+            volume.numpy(),
+            volume2.numpy(),
+            volume3.numpy(),
+            gt.numpy(),
+            weight.numpy()
+        )
 
-            filter_volume, filter_volume2, filter_volume3, filter_labels, filter_weight = filter_blank_slices_thick(
-                volume_thick, volume2_thick, volume3_thick, gt, weight, threshold=15)
+        if self.cfg.MODEL.NUM_CHANNELS == 14:
+            thicknes = cfg.MODEL.NUM_CHANNELS // 4
+        elif self.cfg.MODEL.NUM_CHANNELS == 21:
+            thicknes = cfg.MODEL.NUM_CHANNELS // 6
+        else:
+            thicknes = cfg.MODEL.NUM_CHANNELS // 2
 
-            self.images.extend(filter_volume)
-            self.images2.extend(filter_volume2)
-            self.images3.extend(filter_volume3)
-            self.labels.extend(filter_labels)
-            self.weights.extend(filter_weight)
+        volume_thick = get_thick_slices(volume, thicknes)
+        volume2_thick = get_thick_slices(volume2, thicknes)
+        volume3_thick = get_thick_slices(volume3, thicknes)
+
+        filter_volume, filter_volume2, filter_volume3, filter_labels, filter_weight = filter_blank_slices_thick(
+                volume_thick, volume2_thick, volume3_thick, gt, weight, threshold=10)
+
+        self.images.extend(filter_volume)
+        self.images2.extend(filter_volume2)
+        self.images3.extend(filter_volume3)
+        self.labels.extend(filter_labels)
+        self.weights.extend(filter_weight)
 
         self.count = len(self.images)
-
-        logger.info(
-            "Sucessfully loaded {} with plane {} in {:.3f} seconds".format(
-                    self.count, self.cfg.DATA.PLANE, time.time() - start
-            )
-        )
-    def get_subject_names(self):
-        return self.subjects
 
     def __getitem__(self, index):
 
@@ -541,10 +525,10 @@ class Dataset_t2(Dataset):
             img2 = torch.clamp(img2 / 255.0, min=0.0, max=1.0)
 
             return {
-            "image": img,
-            "image2": img2,
-            "label": label,
-            "weight": weight
+                "image": img,
+                "image2": img2,
+                "label": label,
+                "weight": weight
             }
         elif self.cfg.MODEL.NUM_CHANNELS == 21:
             img2 = self.images2[index]
@@ -575,11 +559,11 @@ class Dataset_t2(Dataset):
             img2 = torch.clamp(img2 / 255.0, min=0.0, max=1.0)
             img3 = torch.clamp(img3 / 255.0, min=0.0, max=1.0)
             return {
-            "image": img,
-            "image2": img2,
-            "image3": img3,
-            "label": label,
-            "weight": weight
+                "image": img,
+                "image2": img2,
+                "image3": img3,
+                "label": label,
+                "weight": weight
             }
         else:
 
@@ -590,15 +574,97 @@ class Dataset_t2(Dataset):
             img = torch.clamp(img / 255.0, min=0.0, max=1.0)
 
             return {
-            "image": img,
-            "label": label,
-            "weight": weight
+                "image": img,
+                "label": label,
+                "weight": weight
             }
+
     def __len__(self):
         """
         Get count.
         """
         return self.count
+
+
+class cases_dataset(Dataset):
+    def __init__(self,
+                 dataset: List,
+                 images_list: List,
+                 cfg: yacs.config.CfgNode
+                 ):
+        self.dataset = dataset
+        self.images_list = images_list
+        self.cfg = cfg
+        self.plane = cfg.DATA.PLANE
+
+    def __getitem__(self, index):
+        volume_img = nib.load(str(self.dataset[index] / self.images_list[0]))
+        gt_img = nib.load(str(self.dataset[index] / 'lesion.nii.gz'))
+
+        if self.cfg.MODEL.NUM_CHANNELS == 14:
+            volume2_img = nib.load(str(self.dataset[index] / self.images_list[1]))
+            volume3_img = nib.load(str(self.dataset[index] / self.images_list[1]))
+        elif self.cfg.MODEL.NUM_CHANNELS == 21:
+            volume2_img = nib.load(str(self.dataset[index] / self.images_list[1]))
+            volume3_img = nib.load(str(self.dataset[index] / self.images_list[2]))
+        else:
+            volume2_img = nib.load(str(self.dataset[index] / self.images_list[0]))
+            volume3_img = nib.load(str(self.dataset[index] / self.images_list[0]))
+
+        volume_img = nib.as_closest_canonical(volume_img)
+        volume2_img = nib.as_closest_canonical(volume2_img)
+        volume3_img = nib.as_closest_canonical(volume3_img)
+        gt_img = nib.as_closest_canonical(gt_img)
+
+        gt = np.asarray(
+            gt_img.get_fdata(), dtype=np.uint8
+        )
+        volume = np.asarray(
+            volume_img.get_fdata(), dtype=np.uint8
+        )
+        volume2 = np.asarray(
+            volume2_img.get_fdata(), dtype=np.uint8
+        )
+        volume3 = np.asarray(
+            volume3_img.get_fdata(), dtype=np.uint8
+        )
+
+        if self.plane == "axial":
+            volume = sagittal_transform_axial(volume)
+            volume2 = sagittal_transform_axial(volume2)
+            volume3 = sagittal_transform_axial(volume3)
+            gt = sagittal_transform_axial(gt)
+
+        if self.plane == "coronal":
+            volume = sagittal_transform_coronal(volume)
+            volume2 = sagittal_transform_coronal(volume2)
+            volume3 = sagittal_transform_coronal(volume3)
+            gt = sagittal_transform_coronal(gt)
+
+        weight = create_weight_mask(
+            gt,
+            max_weight=5,
+            max_edge_weight=5,
+            gradient=True
+        )
+
+        if self.cfg.MODEL.NUM_CHANNELS == 14:
+            return {
+                "image": volume,
+                "image2": volume2,
+                "label": gt,
+                "weight": weight
+            }
+        else:
+            return {
+                "image": volume,
+                "label": gt,
+                "weight": weight
+            }
+
+    def __len__(self):
+        return len(self.dataset)
+
 
 class data_set_from_origdata(Dataset):
     def __init__(self,
@@ -653,7 +719,7 @@ class data_set_from_origdata(Dataset):
             volume = sagittal_transform_coronal(volume)
             volume2 = sagittal_transform_coronal(volume2)
             volume3 = sagittal_transform_coronal(volume3)
-        
+
         volume_thick = get_thick_slices(volume, thicknes)
         volume2_thick = get_thick_slices(volume2, thicknes)
         volume3_thick = get_thick_slices(volume3, thicknes)
@@ -662,7 +728,7 @@ class data_set_from_origdata(Dataset):
         self.images2 = volume2_thick
         self.images3 = volume3_thick
         self.count = len(self.images)
-    
+
     def get_img_info(self):
         return self.affine, self.header
 
@@ -715,17 +781,17 @@ class data_set_from_origdata(Dataset):
 
 if __name__ == "__main__":
     cfg = get_cfg_defaults()
-    train = Dataset_V1('/localmount/volume-ssd/users/uline/input_test/data/train_axial_FlairT2.hdf5',cfg)
+    train = Dataset_V1('/localmount/volume-ssd/users/uline/input_test/data/train_axial_FlairT2.hdf5', cfg)
 
     Dict = train.__getitem__(200)
 
     label = Dict["label"].numpy()
     img = Dict["image"].numpy()
     img2 = Dict["image2"].numpy()
-    print(img.shape,img2.shape)
+    print(img.shape, img2.shape)
     from matplotlib import pyplot as plt
 
-    plt.imshow(img[4, :, :],cmap = 'gray')
+    plt.imshow(img[4, :, :], cmap='gray')
     plt.figure()
-    plt.imshow(img2[4, :, :],cmap = 'gray')
+    plt.imshow(img2[4, :, :], cmap='gray')
     plt.show()
