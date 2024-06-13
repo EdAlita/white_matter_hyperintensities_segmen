@@ -1,7 +1,5 @@
 # WMHSegmentation-Thesis-Project
 
-# Lung MRI Registration Project
-
 ## Table of Contents
 
 1. [**Introduction**](#introduction)
