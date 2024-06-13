@@ -11,7 +11,7 @@
 4. [**Installation and Usage**](#installation-and-usage)
    - Software requirements, installation guide, and usage instructions.
 5. [**How to use it**](#wiki)
-   - Summary of project achievements and TRE results visualization.
+   - Links to instructons on how to use the model.
 6. [**Authors**](#authors)
    - Contributions and profiles of the project team.
 7. [**License**](#license)
