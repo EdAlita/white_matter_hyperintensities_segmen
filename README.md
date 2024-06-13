@@ -71,7 +71,8 @@ pip install -r requirements.txt
 
 How to used the scripts
 
-- [**Train**](wiki/train.md) 
+- [**Train**](wiki/train.md)
+- [**Inference**](wiki/inference.md) 
 
 ## Authors
 - [Edwing Ulin](https://github.com/EdAlita)
