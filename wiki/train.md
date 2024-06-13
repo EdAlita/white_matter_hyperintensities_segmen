@@ -1,5 +1,7 @@
 # Run trainning
 
+The trainning creates a folder strcuture where you run the script
+
 ## Run with hdf5 file
 
 ### Execution
