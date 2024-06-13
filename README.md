@@ -74,6 +74,7 @@ pip install -r requirements.txt
 
 How to used the scripts
 
+- [**Generate Data**](wiki/generate_hdf5.md) 
 - [**Train**](wiki/train.md)
 - [**Inference**](wiki/inference.md) 
 
