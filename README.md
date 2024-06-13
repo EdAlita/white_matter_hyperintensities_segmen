@@ -11,7 +11,7 @@
 4. [**Installation and Usage**](#installation-and-usage)
    - Software requirements, installation guide, and usage instructions.
 5. [**How to use it**](#wiki)
-   - Summary of project achievements and TRE results visualization.
+   - Links to instructons on how to use the model.
 6. [**Authors**](#authors)
    - Contributions and profiles of the project team.
 7. [**License**](#license)
@@ -20,6 +20,9 @@
 ## Introduction
 
 This repository houses the project of the thesisAutomated Segmentation of White Matter Hyperintensities using Deep Learning , a crucial task in the early diagnosis and intervention of neurodegenerative diseases like Alzheimer’s. Our method uniquely integrates 3 architecture with multi-planar data representation and innovative training techniques to enhance segmentation accuracy and robustness.
+Implemented models in this code: 
+
+![alt text](https://github.com/EdAlita/white_matter_hyperintensities_segmen/blob/main/images/networks.png?raw=true)
 
 ## Objectives
 1. Comprehensive analysis of medical image analysis for White Matter Hyperintensities (WMH).
@@ -68,6 +71,14 @@ pip install -r requirements.txt
 ```
 
 ## Wiki
+
+How to used the scripts
+
+- [**Pre-processing**](wiki/harmonize_data.md) 
+- [**Generate Data**](wiki/generate_hdf5.md) 
+- [**Train**](wiki/train.md)
+- [**Inference**](wiki/inference.md)
+- [**View Aggregation and Evaluate**](wiki/evaluate.md) 
 
 ## Authors
 - [Edwing Ulin](https://github.com/EdAlita)

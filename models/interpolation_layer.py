@@ -96,11 +96,11 @@ class _ZoomNd(nn.Module):
             tuple(target_shape) if isinstance(target_shape, _T.Iterable) else tuple()
         )
         if tup_target_shape != self._target_shape:
-            LOGGER.debug(
+            logger.debug(
                 f"Changing the target_shape of {type(self).__name__} to {tup_target_shape} from {self._target_shape}."
             )
         elif (target_shape is None) != (self._target_shape is None):
-            LOGGER.debug(
+            logger.debug(
                 f"Changing the target_shape of {type(self).__name__} to {target_shape} from {self._target_shape}."
             )
         if len(tup_target_shape) in [0, self._N]:

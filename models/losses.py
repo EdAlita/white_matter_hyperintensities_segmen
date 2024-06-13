@@ -182,13 +182,6 @@ class CombinedLoss(nn.Module):
 
         return total_loss, dice_val, ce_val
 
-class Unified_Focal_loss(nn.Module):
-    def __init__(self):
-        super(Unified_Focal_loss, self).__init__()
-
-    def forward(self):
-        return loss
-
 def get_loss_func(
     cfg: yacs.config.CfgNode,
 ) -> Union[CombinedLoss, CrossEntropy2D, DiceLoss]:
