@@ -227,6 +227,8 @@ def data_harmonization(root_path: Path,verbose: bool = False):
                 if shape != (256, 256, 256):
                     if verbose: print(f'[info]: 256*256*256 remapping ....')
                     img_array = map_size(img_array, [256, 256, 256], verbose)
+                if 'lesion' in file.name:
+                    img_array[img_array != 0] = 1
 
                 if not 'lesion' in file.name:
                     img_array[img_array < 0] = 0

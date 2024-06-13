@@ -13,7 +13,7 @@ def re_name_data(
     for folder in sorted(root_path.iterdir()):
         if folder.is_dir():
             for file in folder.iterdir():
-                if 'wmh' in file.name or 'lesion' in file.name:
+                if 'label' in file.name or 'lesion' in file.name:
                     if verbose: print(folder / file.name, folder / 'lesion.nii.gz')
                     os.rename(folder / file.name, folder / 'lesion.nii.gz')
                     img = nib.load(folder / folder / 'lesion.nii.gz')
@@ -25,16 +25,16 @@ def re_name_data(
                     if verbose: print(folder / file.name, folder / 'FLAIR.nii.gz')
                     os.rename(folder / file.name, folder / 'FLAIR.nii.gz')
                     img = nib.load(folder / folder / 'FLAIR.nii.gz')
-                    gt_seg = np.asarray(img.get_fdata(), dtype=np.int16)
-                    img.header.set_data_dtype(np.int16)
+                    gt_seg = np.asarray(img.get_fdata(), dtype=np.uint8)
+                    img.header.set_data_dtype(np.uint8)
                     img_out = nib.Nifti1Image(gt_seg, img.affine, img.header)
                     nib.save(img_out, folder / 'FLAIR.nii.gz')
                 elif 'T1' in file.name:
                     if verbose: print(folder / file.name, folder / 'T1.nii.gz')
                     os.rename(folder / file.name, folder / 'T1.nii.gz')
                     img = nib.load(folder / folder / 'T1.nii.gz')
-                    gt_seg = np.asarray(img.get_fdata(), dtype=np.int16)
-                    img.header.set_data_dtype(np.int16)
+                    gt_seg = np.asarray(img.get_fdata(), dtype=np.uint8)
+                    img.header.set_data_dtype(np.uint8)
                     img_out = nib.Nifti1Image(gt_seg, img.affine, img.header)
                     nib.save(img_out, folder / 'T1.nii.gz')
                 elif 'T2' in file.name:
@@ -51,4 +51,4 @@ def re_name_data(
                     os.remove(folder / file.name)
 
 if __name__ == "__main__":
-    re_name_data(Path('/localmount/volume-hd/users/uline/data_sets/bio-bank-sample'),verbose=True)
+    re_name_data(Path('/localmount/volume-hd/users/uline/data_sets/new_cases'),verbose=True)

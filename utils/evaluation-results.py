@@ -2,9 +2,9 @@ import pandas as pd
 from scipy.stats import wilcoxon
 import itertools
 
-df = pd.read_csv('/localmount/volume-hd/users/uline/segmentation_results/aug_test/test_flairt1.csv')
-
-dice_columns = [col for col in df.columns if 'Recall' in col]
+df = pd.read_csv('/localmount/volume-hd/users/uline/segmentation_results/miccai_2016/test.csv')
+value = 'VS'
+dice_columns = [col for col in df.columns if value in col]
 print(dice_columns)
 
 # Calculate Wilcoxon tests for all unique pairs of 'DICE' columns
@@ -21,4 +21,4 @@ for col1, col2 in itertools.combinations(dice_columns, 2):
 
 print(p_values)
 
-p_values.to_csv('wilcoxon_p_values_Recall_t1.csv')
+p_values.to_csv(f'/localmount/volume-hd/users/uline/segmentation_results/miccai_2016/wilcoxon_p_values_{value}.csv')

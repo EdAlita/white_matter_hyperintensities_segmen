@@ -15,7 +15,9 @@ class EvaluateFromDir:
         results = {}
 
         for folder in tqdm(sorted(self.path.iterdir()),desc='Evaluating....'):
-            gt =np.asarray((nib.as_closest_canonical(nib.load(folder / 'lesion.nii.gz'))).get_fdata(), dtype=np.uint8)
+            gt =(nib.as_closest_canonical(nib.load(folder / 'lesion.nii.gz'))).get_fdata()
+            gt[gt != 0] = 1
+            gt = np.asarray(gt,dtype=np.uint8)
             folder_result = {}
             tqdm.write(f'Evaluating {folder.name}')
             for file in sorted(folder.glob('*.nii.gz')):

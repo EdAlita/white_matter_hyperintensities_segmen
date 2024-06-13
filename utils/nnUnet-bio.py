@@ -11,7 +11,7 @@ class create_2_D_nnUnet:
     def __init__(self,
                  out_path: Path,
                  npz_path: Path,
-                 th: float = 0.6):
+                 th: float = 0.9):
         self.out_path = out_path
         self.npz_path = npz_path
         self.th = th
