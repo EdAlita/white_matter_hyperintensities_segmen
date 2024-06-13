@@ -53,7 +53,7 @@ To execute the inference, provide the necessary paths and configuration settings
 Example of the use of generate_hdf5
 
 ```bash
-python3 generate_hdf5.py --dataset_name train_axial_FlairT1.hdf5 \
+python3 data/generate_hdf5.py --dataset_name train_axial_FlairT1.hdf5 \
 --dataset_path /localmount/volume-hd/users/uline/data_sets/CVD \
 --csv_file  /localmount/volume-hd/users/uline/data_sets/CVD/wmh_overall.csv \
 --thickness 3 \
