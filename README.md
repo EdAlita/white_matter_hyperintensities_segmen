@@ -1,26 +1,58 @@
-# WMHSegmentation-DenseUNet
+# WMHSegmentation-Thesis-Project
+
+# Lung MRI Registration Project
+
+## Table of Contents
+
+1. [**Introduction**](#introduction)
+   - Overview and explanation of the project.
+2. [**Objectives**](#objectives)
+   - Development, automation, and validation of the lung image registration process.
+3. [**Folders**](#folders)
+   - Descriptions of various folders like Noteebooks, Data, Parameters, etc.
+4. [**Installation and Usage**](#installation-and-usage)
+   - Software requirements, installation guide, and usage instructions.
+5. [**How to use it**](#wiki)
+   - Summary of project achievements and TRE results visualization.
+6. [**Authors**](#authors)
+   - Contributions and profiles of the project team.
+7. [**License**](#license)
+   - Licensing information of the project.
+
+## Introduction
 
 This repository houses the Dense U-Net driven approach to automate the segmentation of White Matter Hyperintensities (WMH) from MRI data, a crucial task in the early diagnosis and intervention of neurodegenerative diseases like Alzheimer’s. Our method uniquely integrates Dense U-Net architecture with multi-planar data representation and innovative training techniques to enhance segmentation accuracy and robustness.
 
-## Key Features
+## Objectives
+1. Comprehensive analysis of medical image analysis for White Matter Hyperintensities (WMH).
+2. Evaluate the performance of Dense UNet, FastSurferCNN, and nn-UNet.
+3. Investigate the effects of multimodal information and varying input types and kernel sizes on these models.
+4. Explore the impact of transfer learning.
+5. Explore the models Generalizability.
 
-- **Dense U-Net Implementation:** Utilizes the Dense U-Net architecture for high-precision segmentation of WMH.
-- **Multi-planar MRI Data Handling:** Adapts to the complex anatomical variations present in different patients using multi-planar data.
-- **Robust Validation:** Extensively validated on datasets from the Rhineland Study and UK Biobank, demonstrating superior performance over traditional segmentation methods.
-- **Open-Source Framework:** Available for the community to collaborate, further research, and adapt in clinical settings.
+## Folders
 
-## Repository Contents
+- [**Config**](config): configurations files for the networks and default configuration.
+- [**Data**](data) : data scripts for ingesting, altering and preprocessing.
+- [**Metrics**](metrics) : Evaluation Metrics use for the models.
+- [**Models**](models) : Pices of code use in the creation of the models.
+- [**Utils**](utils) : General codes use in the model.
 
-- **Source Code:** Complete implementation of the Dense U-Net model configured for various datasets.
-- **Data Preprocessing Scripts:** Tools for preparing MRI data for training and evaluation.
-- **Evaluation Scripts:** Scripts to quantitatively assess the model's performance using standard metrics.
-- **Documentation:** Detailed guides and instructions on setting up, training, and deploying the segmentation models.
-
-## Getting Started
+## Installation and Usage
 
 ### Prerequisites
 
 Ensure you have Python 3.8 or higher installed, along with PyTorch 1.7 and other necessary libraries detailed in the `requirements.txt`.
+
+
+### Creating a Virtual Environment
+To avoid conflicts with other Python projects, it's recommended to create a virtual environment:
+1. Install `virtualenv` if you haven't already: `pip install virtualenv`
+2. Create a new virtual environment: `virtualenv venv` (or `python -m venv venv` if using Python's built-in venv)
+3. Activate the virtual environment:
+   - On Windows: `venv\Scripts\activate`
+   - On macOS and Linux: `source venv/bin/activate`
+4. Your command prompt should now show the name of the activated environment.
 
 ### Installation
 
@@ -37,4 +69,11 @@ Install the required Python packages:
 pip install -r requirements.txt
 ```
 
-For detailed usage and additional parameters, refer to the documentation.
+## Wiki
+
+## Authors
+- [Carmen Colin](https://github.com/CarmenColinTen)
+- [Edwing Ulin](https://github.com/EdAlita)
+
+## License
+This project is licensed under the Creative Common Lincense - see the [LICENSE.md](LICENSE) file for details.
