@@ -19,7 +19,7 @@
 
 ## Introduction
 
-This repository houses the Dense U-Net driven approach to automate the segmentation of White Matter Hyperintensities (WMH) from MRI data, a crucial task in the early diagnosis and intervention of neurodegenerative diseases like Alzheimer’s. Our method uniquely integrates Dense U-Net architecture with multi-planar data representation and innovative training techniques to enhance segmentation accuracy and robustness.
+This repository houses the project of the thesisAutomated Segmentation of White Matter Hyperintensities using Deep Learning , a crucial task in the early diagnosis and intervention of neurodegenerative diseases like Alzheimer’s. Our method uniquely integrates 3 architecture with multi-planar data representation and innovative training techniques to enhance segmentation accuracy and robustness.
 
 ## Objectives
 1. Comprehensive analysis of medical image analysis for White Matter Hyperintensities (WMH).
