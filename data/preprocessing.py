@@ -10,6 +10,7 @@ TO DO: 1 mm data interpolation
 """""
 from nibabel.processing import resample_to_output
 import numpy as np
+import sys
 
 def rescale_image(img_data):
     # Conform intensities
