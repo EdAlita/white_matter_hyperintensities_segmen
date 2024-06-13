@@ -20,6 +20,9 @@
 ## Introduction
 
 This repository houses the project of the thesisAutomated Segmentation of White Matter Hyperintensities using Deep Learning , a crucial task in the early diagnosis and intervention of neurodegenerative diseases like Alzheimer’s. Our method uniquely integrates 3 architecture with multi-planar data representation and innovative training techniques to enhance segmentation accuracy and robustness.
+Implemented models in this code: 
+
+![alt text]([https://github.com/EdAlita/lung_registration/blob/main/images/TRE-unmaks.png?raw=true](https://github.com/EdAlita/white_matter_hyperintensities_segmen/blob/main/images/networks.png))
 
 ## Objectives
 1. Comprehensive analysis of medical image analysis for White Matter Hyperintensities (WMH).
