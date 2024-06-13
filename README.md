@@ -77,7 +77,8 @@ How to used the scripts
 - [**Pre-processing**](wiki/harmonize_data.md) 
 - [**Generate Data**](wiki/generate_hdf5.md) 
 - [**Train**](wiki/train.md)
-- [**Inference**](wiki/inference.md) 
+- [**Inference**](wiki/inference.md)
+- [**View Aggregation and Evaluate**](wiki/evaluate.md) 
 
 ## Authors
 - [Edwing Ulin](https://github.com/EdAlita)
