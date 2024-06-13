@@ -74,6 +74,7 @@ pip install -r requirements.txt
 
 How to used the scripts
 
+- [**Pre-processing**](wiki/harmonize_data.md) 
 - [**Generate Data**](wiki/generate_hdf5.md) 
 - [**Train**](wiki/train.md)
 - [**Inference**](wiki/inference.md) 
