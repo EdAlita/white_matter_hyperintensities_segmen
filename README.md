@@ -69,6 +69,10 @@ pip install -r requirements.txt
 
 ## Wiki
 
+How to used the scripts
+
+- [**Train**](wiki/train.md) 
+
 ## Authors
 - [Edwing Ulin](https://github.com/EdAlita)
 
