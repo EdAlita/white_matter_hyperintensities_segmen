@@ -70,7 +70,6 @@ pip install -r requirements.txt
 ## Wiki
 
 ## Authors
-- [Carmen Colin](https://github.com/CarmenColinTen)
 - [Edwing Ulin](https://github.com/EdAlita)
 
 ## License
