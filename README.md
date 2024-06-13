@@ -38,6 +38,7 @@ Implemented models in this code:
 - [**Metrics**](metrics) : Evaluation Metrics use for the models.
 - [**Models**](models) : Pices of code use in the creation of the models.
 - [**Utils**](utils) : General codes use in the model.
+- [**Examples**](examples) : how to run in cmd line.
 
 ## Installation and Usage
 
